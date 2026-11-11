@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Ajustes próprios (edite aqui, não no style.css gerado) ===== */
+.sidebar-transition { transition: transform 0.3s ease; }
+
+/* Evita o zoom automático dos campos no iPhone e deixa o toque mais confortável no celular */
+@media (max-width: 767px) {
+  input, select { font-size: 16px !important; }
+}
+
+/* ===== Tema escuro (ativado por data-tema="escuro" no elemento html) ===== */
+html[data-tema="escuro"] { color-scheme: dark; }
+html[data-tema="escuro"] body { background: #0b1220; color: #e2e8f0; }
+
+html[data-tema="escuro"] .bg-white { background-color: #111827; }
+html[data-tema="escuro"] .bg-slate-50 { background-color: #1a2335; }
+html[data-tema="escuro"] .bg-slate-100 { background-color: #1e293b; }
+html[data-tema="escuro"] .bg-slate-900 { background-color: #334155; }
+html[data-tema="escuro"] .bg-sky-50 { background-color: #0c2a3f; }
+html[data-tema="escuro"] .bg-sky-100 { background-color: #0c3a57; }
+html[data-tema="escuro"] .bg-emerald-50 { background-color: #0b2e25; }
+html[data-tema="escuro"] .bg-cyan-50 { background-color: #0a2f3a; }
+html[data-tema="escuro"] .bg-rose-50 { background-color: #3a1620; }
+html[data-tema="escuro"] .bg-amber-50 { background-color: #3a2c10; }
+
+html[data-tema="escuro"] .border-slate-100,
+html[data-tema="escuro"] .border-slate-200,
+html[data-tema="escuro"] .border-slate-300 { border-color: #2b3649; }
+html[data-tema="escuro"] .border-sky-200 { border-color: #0c4a6e; }
+html[data-tema="escuro"] .border-emerald-100,
+html[data-tema="escuro"] .border-emerald-200 { border-color: #14452f; }
+html[data-tema="escuro"] .border-cyan-200 { border-color: #155e75; }
+html[data-tema="escuro"] .border-rose-200 { border-color: #7f1d1d; }
+html[data-tema="escuro"] .border-amber-200 { border-color: #78350f; }
+html[data-tema="escuro"] .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #2b3649; }
+
+html[data-tema="escuro"] .text-slate-900,
+html[data-tema="escuro"] .text-slate-800 { color: #f1f5f9; }
+html[data-tema="escuro"] .text-slate-700 { color: #e2e8f0; }
+html[data-tema="escuro"] .text-slate-600 { color: #cbd5e1; }
+html[data-tema="escuro"] .text-slate-500 { color: #94a3b8; }
+html[data-tema="escuro"] .text-slate-400 { color: #7c8aa0; }
+html[data-tema="escuro"] .text-emerald-900 { color: #6ee7b7; }
+html[data-tema="escuro"] .text-emerald-600 { color: #34d399; }
+html[data-tema="escuro"] .text-rose-600 { color: #fb7185; }
+html[data-tema="escuro"] .text-rose-700 { color: #fda4af; }
+html[data-tema="escuro"] .text-cyan-900,
+html[data-tema="escuro"] .text-cyan-600 { color: #22d3ee; }
+html[data-tema="escuro"] .text-sky-900,
+html[data-tema="escuro"] .text-sky-800,
+html[data-tema="escuro"] .text-sky-700 { color: #7dd3fc; }
+html[data-tema="escuro"] .text-amber-800 { color: #fcd34d; }
+
+html[data-tema="escuro"] .hover\:bg-slate-50:hover,
+html[data-tema="escuro"] .hover\:bg-slate-100:hover,
+html[data-tema="escuro"] .hover\:bg-slate-200:hover { background-color: #263248; }
+html[data-tema="escuro"] .hover\:bg-sky-100:hover,
+html[data-tema="escuro"] .hover\:bg-sky-200:hover { background-color: #0c4a6e; }
+html[data-tema="escuro"] .hover\:bg-rose-100:hover { background-color: #4c1d2b; }
+html[data-tema="escuro"] .hover\:text-slate-900:hover { color: #ffffff; }

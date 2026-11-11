@@ -1,0 +1,13 @@
+{
+  "name": "controle-financeiro",
+  "version": "3.2.0",
+  "private": true,
+  "description": "Controle financeiro pessoal que roda no navegador e guarda os dados no aparelho.",
+  "scripts": {
+    "css": "tailwindcss -c tailwind.config.js -i src/input.css -o style.css",
+    "css:watch": "tailwindcss -c tailwind.config.js -i src/input.css -o style.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}
