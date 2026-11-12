@@ -1,6 +1,6 @@
 
 /* ============ Constantes ============ */
-const VERSAO_APP = '3.3.0';
+const VERSAO_APP = '3.4.0';
 const VERSAO_DADOS = 6; // 1 = lista de meses, 2 = valores em reais, 3 = valores em centavos, 4 = categorias novas e forma de pagamento, 5 = contas fixas, 6 = categorias enxutas, receita fixa e data do último backup
 const CHAVE_V3 = 'controle_financeiro_v3'; // só usada se o IndexedDB não estiver disponível
 const CHAVES_ANTIGAS = ['controle_financeiro_v2', 'controle_financeiro_dados', 'controle_financas_saas_dados', 'controle_financas_dados'];
@@ -210,7 +210,7 @@ function normalizar(bruto, versaoOrigem) {
         });
     }
     const feitoEm = !ehLista && /^\d{4}-\d{2}-\d{2}$/.test(String(bruto.ultimoBackup || '')) ? String(bruto.ultimoBackup) : '';
-    return { versao: VERSAO_DADOS, saldoInicial: ehLista ? 0 : conv(bruto.saldoInicial), boasVindasOk: !ehLista && !!bruto.boasVindasOk, ultimoBackup: feitoEm, categorias: cats, contasFixas, meses };
+    return { versao: VERSAO_DADOS, saldoInicial: ehLista ? 0 : conv(bruto.saldoInicial), boasVindasOk: !ehLista && !!bruto.boasVindasOk, ultimoBackup: feitoEm, backupAdiadoAte: !ehLista && /^\d{4}-\d{2}-\d{2}$/.test(String(bruto.backupAdiadoAte || '')) ? String(bruto.backupAdiadoAte) : '', categorias: cats, contasFixas, meses };
 }
 
 function normalizarFixas(lista, categorias) {
@@ -276,10 +276,32 @@ async function gravarDB(chave, valor) {
     });
 }
 
+// Pontos de restauração automáticos, guardados no próprio navegador: um por dia (o estado no início do dia)
+// e um antes de cada atualização do formato dos dados ou de uma restauração.
+const MAX_DIARIOS = 7, MAX_ATUALIZACAO = 3;
+async function lerSnapshots() {
+    try { return (await lerDB('snapshots')) || []; } catch (e) { return []; }
+}
+async function salvarSnapshot(json, motivo) {
+    try {
+        let lista = await lerSnapshots();
+        const dia = hojeISO();
+        if (motivo === 'diario' && lista.some(x => x.motivo === 'diario' && x.dia === dia)) return;
+        lista.push({ id: uid(), dia, quando: new Date().toISOString(), motivo, json });
+        const diarios = lista.filter(x => x.motivo === 'diario').slice(-MAX_DIARIOS);
+        const antes = lista.filter(x => x.motivo === 'atualizacao').slice(-MAX_ATUALIZACAO);
+        lista = [...diarios, ...antes].sort((a, b) => a.quando.localeCompare(b.quando));
+        await gravarDB('snapshots', lista);
+    } catch (e) { /* sem IndexedDB: segue sem pontos de restauração */ }
+}
+
 async function carregar() {
     try {
         const atual = await lerDB('estado');
-        if (atual) return migrar(atual);
+        if (atual) {
+            if ((parseInt(atual.versao) || 2) < VERSAO_DADOS) await salvarSnapshot(JSON.stringify(atual), 'atualizacao');
+            return migrar(atual);
+        }
     } catch (e) { /* cai para o localStorage */ }
     try {
         const v3 = localStorage.getItem(CHAVE_V3);
@@ -294,7 +316,10 @@ async function carregar() {
                 if (dados && typeof dados === 'object' && (!melhor || contar(dados) > contar(melhor))) melhor = dados;
             } catch (e) { /* chave corrompida */ }
         });
-        if (melhor) return migrar(melhor);
+        if (melhor) {
+            await salvarSnapshot(JSON.stringify(melhor), 'atualizacao');
+            return migrar(melhor);
+        }
     } catch (e) {
         console.error(e);
     }
@@ -451,7 +476,7 @@ function renderizarConteudo() {
     const c = document.getElementById('conteudoPrincipal');
     if (abaAtiva === 'resumo_geral') c.innerHTML = viewGeral();
     else if (abaAtiva === 'fixas') c.innerHTML = viewFixas();
-    else if (abaAtiva === 'config') c.innerHTML = viewConfig();
+    else if (abaAtiva === 'config') { c.innerHTML = viewConfig(); atualizarPontos(); }
     else if (ehAbaTri(abaAtiva)) c.innerHTML = viewTrimestre(abaAtiva);
     else c.innerHTML = viewMes(estado.meses.find(m => m.id === abaAtiva));
 }
@@ -643,16 +668,27 @@ function viewTrimestre(k) {
         </div>`;
 }
 
+// O aviso é discreto: só aparece sem nenhum backup (depois de 10 registros) ou com o último passando de 90 dias,
+// e pode ser adiado por 30 dias. Os pontos de restauração automáticos cobrem erros do dia a dia.
 function avisoBackup() {
     const qtd = estado.meses.reduce((a, m) => a + m.lancamentos.length + m.receitas.length, 0);
-    if (qtd < 5) return '';
+    if (qtd < 10) return '';
+    if (estado.backupAdiadoAte && hojeISO() < estado.backupAdiadoAte) return '';
     const ult = estado.ultimoBackup;
     const dias = ult ? Math.floor((Date.now() - new Date(ult + 'T12:00:00').getTime()) / 86400000) : null;
-    if (ult && dias < 30) return '';
-    return `<div class="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-xs flex items-center justify-between gap-3">
-        <span>${ult ? 'Seu último backup foi há ' + dias + ' dias.' : 'Você ainda não fez backup dos seus dados.'} Eles ficam só neste aparelho.</span>
-        <button onclick="exportarDados()" class="shrink-0 bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-2 rounded-lg">Fazer backup</button>
+    if (ult && dias < 90) return '';
+    return `<div class="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-xs flex flex-wrap items-center justify-between gap-2">
+        <span>${ult ? 'Seu último backup foi há ' + dias + ' dias.' : 'Você ainda não guardou uma cópia dos seus dados fora do aparelho.'} Se perder o celular ou limpar os dados do navegador, eles somem.</span>
+        <span class="flex gap-2 shrink-0">
+            <button onclick="adiarBackup()" class="bg-white hover:bg-amber-100 text-amber-800 font-bold px-3 py-2 rounded-lg border border-amber-300">Depois</button>
+            <button onclick="exportarDados()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-2 rounded-lg">Fazer backup</button>
+        </span>
     </div>`;
+}
+function adiarBackup() {
+    const d = new Date(Date.now() + 30 * 86400000);
+    estado.backupAdiadoAte = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    salvar();
 }
 
 function resumoPagamento(mes) {
@@ -748,7 +784,50 @@ function viewFixas() {
 
 /* ---- Configurações: categorias, orçamento, saldo inicial ---- */
 function viewConfig() {
-    return viewConfigCorpo() + blocoAparencia();
+    return viewConfigCorpo() + blocoPontos() + blocoAparencia();
+}
+
+function blocoPontos() {
+    return `
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+            <div>
+                <h3 class="font-bold text-slate-900">Pontos de restauração automáticos</h3>
+                <p class="text-xs text-slate-500">O app guarda sozinho uma cópia por dia (os últimos 7 dias) e uma antes de cada atualização. Use para voltar de um erro, sem baixar nada. As cópias ficam neste aparelho, junto com os dados.</p>
+            </div>
+            <div id="listaPontos" class="space-y-2"><p class="text-sm text-slate-400">Carregando...</p></div>
+            <p id="statusArmazenamento" class="text-[11px] text-slate-400"></p>
+        </div>`;
+}
+
+async function atualizarPontos() {
+    const el = document.getElementById('listaPontos');
+    if (!el) return;
+    const lista = (await lerSnapshots()).slice().reverse();
+    const quando = q => new Date(q).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    el.innerHTML = lista.length ? lista.map(x => {
+        const rotulo = x.motivo === 'diario' ? 'Início do dia ' + dataBR(x.dia) : 'Antes de atualizar ou restaurar (' + quando(x.quando) + ')';
+        return `<div class="flex items-center justify-between gap-3 border border-slate-200 rounded-xl px-3 py-2">
+            <span class="text-sm text-slate-700">${esc(rotulo)}</span>
+            <button onclick="restaurarPonto('${x.id}')" class="shrink-0 text-sky-700 hover:text-sky-900 font-bold text-xs bg-sky-50 px-3 py-2 rounded-lg">Restaurar</button>
+        </div>`;
+    }).join('') : '<p class="text-sm text-slate-400 italic">Ainda não há pontos de restauração. O primeiro é criado quando você abrir o app amanhã.</p>';
+    const st = document.getElementById('statusArmazenamento');
+    if (st && navigator.storage && navigator.storage.persisted) {
+        try {
+            const ok = await navigator.storage.persisted();
+            st.textContent = ok ? 'Armazenamento protegido: o navegador não apaga estes dados sozinho.' : 'Dica: instale o app na tela inicial para o navegador tratar os dados como protegidos.';
+        } catch (e) { /* ignora */ }
+    }
+}
+
+async function restaurarPonto(id) {
+    const ponto = (await lerSnapshots()).find(x => x.id === id);
+    if (!ponto) return;
+    if (!(await confirmar('Voltar para este ponto vai substituir os dados atuais. Um ponto com os dados de agora é guardado antes, para você poder voltar.', { ok: 'Restaurar', perigo: true }))) return;
+    await salvarSnapshot(JSON.stringify(estado), 'atualizacao');
+    estado = migrar(JSON.parse(ponto.json));
+    salvar();
+    mostrarToast('Dados restaurados.');
 }
 
 function blocoAparencia() {
@@ -1457,6 +1536,7 @@ async function iniciar() {
     aplicarTema();
     if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', aplicarTema);
     estado = await carregar();
+    if (estado.meses.some(m => m.lancamentos.length || m.receitas.length)) await salvarSnapshot(JSON.stringify(estado), 'diario');
     aplicarFixasTodos();
     garantirMesAtual();
     renderizar();
