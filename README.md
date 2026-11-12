@@ -7,8 +7,12 @@ Controle financeiro pessoal que roda no navegador do celular ou do computador. O
 ## O que ele faz
 
 - Receitas separadas por mês (salário, extra, 13º) e lançamentos de gastos e investimentos.
-- Categorias editáveis, com cor, tipo (gasto ou investimento) e limite mensal. Já vem com 16 categorias comuns, que você pode renomear ou excluir. A barra avisa quando você chega perto do limite e quando passa dele.
-- Contas fixas (aluguel, internet, assinaturas) cadastradas uma vez, que entram sozinhas em todos os meses a partir do mês de início.
+- Categorias editáveis, com cor, tipo (gasto ou investimento) e limite mensal. Já vem com 6 categorias essenciais e um menu de categorias sugeridas para adicionar com um toque. A barra avisa quando você chega perto do limite e quando passa dele.
+- Contas fixas e receitas fixas (aluguel, internet, salário) cadastradas uma vez, que entram sozinhas em todos os meses a partir do mês de início.
+- Lançamento rápido pelo botão +, com sugestão de categoria e forma de pagamento pela descrição.
+- Desfazer a última exclusão, aviso de backup após 30 dias e resumo por forma de pagamento (inclui o total do crédito do mês).
+- Comparação de cada categoria com o mês anterior.
+- Menu lateral compacto, com meses agrupados por ano e um puxador para abrir e fechar no celular.
 - Saldo inicial e saldo acumulado, seguindo a ordem cronológica dos meses.
 - Forma de pagamento em cada lançamento (débito, crédito, Pix, dinheiro ou boleto). No crédito e no boleto você informa as parcelas, e os meses seguintes são criados automaticamente.
 - Trimestres do calendário (janeiro a março é o 1º), calculados automaticamente a partir do mês.

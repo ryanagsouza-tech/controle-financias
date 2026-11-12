@@ -1,20 +1,25 @@
 
 /* ============ Constantes ============ */
-const VERSAO_APP = '3.2.0';
-const VERSAO_DADOS = 5; // 1 = lista de meses, 2 = valores em reais, 3 = valores em centavos, 4 = categorias novas e forma de pagamento, 5 = contas fixas
+const VERSAO_APP = '3.3.0';
+const VERSAO_DADOS = 6; // 1 = lista de meses, 2 = valores em reais, 3 = valores em centavos, 4 = categorias novas e forma de pagamento, 5 = contas fixas, 6 = categorias enxutas, receita fixa e data do último backup
 const CHAVE_V3 = 'controle_financeiro_v3'; // só usada se o IndexedDB não estiver disponível
 const CHAVES_ANTIGAS = ['controle_financeiro_v2', 'controle_financeiro_dados', 'controle_financas_saas_dados', 'controle_financas_dados'];
 const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const ABREV_MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const PALETA = ['#3b82f6', '#f59e0b', '#ef4444', '#14b8a6', '#8b5cf6', '#ec4899', '#10b981', '#06b6d4', '#84cc16', '#f97316'];
+// As 6 categorias que já vêm no app. Qualquer uma pode ser renomeada, recolorida ou excluída.
 const CATEGORIAS_PADRAO = [
     { id: 'CustosFixos', nome: 'Moradia e Contas (Aluguel, Condomínio, Luz, Água, Internet)', cor: '#3b82f6', tipo: 'gasto', orcamento: 0 },
     { id: 'Alimentacao', nome: 'Alimentação (Mercado, Feira, Refeição)', cor: '#f59e0b', tipo: 'gasto', orcamento: 0 },
     { id: 'Transporte', nome: 'Transporte (Combustível, Condução, Carro)', cor: '#ef4444', tipo: 'gasto', orcamento: 0 },
     { id: 'Saude', nome: 'Saúde (Consultas, Medicamentos)', cor: '#14b8a6', tipo: 'gasto', orcamento: 0 },
+    { id: 'Lazer', nome: 'Lazer & Passeios', cor: '#10b981', tipo: 'gasto', orcamento: 0 },
+    { id: 'Investimentos', nome: 'Investimentos & Poupança', cor: '#06b6d4', tipo: 'investimento', orcamento: 0 }
+];
+// Categorias que o usuário pode adicionar com um toque, em Categorias, no menu "+ Sugeridas"
+const CATEGORIAS_SUGERIDAS = [
     { id: 'Educacao', nome: 'Educação (Faculdade, Cursos, Livros)', cor: '#8b5cf6', tipo: 'gasto', orcamento: 0 },
     { id: 'Vestuario', nome: 'Vestuário (Roupas, Calçados)', cor: '#ec4899', tipo: 'gasto', orcamento: 0 },
-    { id: 'Lazer', nome: 'Lazer & Passeios', cor: '#10b981', tipo: 'gasto', orcamento: 0 },
     { id: 'Assinaturas', nome: 'Assinaturas e Serviços (Streaming, Celular, Aplicativos)', cor: '#6366f1', tipo: 'gasto', orcamento: 0 },
     { id: 'CuidadosPessoais', nome: 'Cuidados Pessoais (Beleza, Higiene, Academia)', cor: '#d946ef', tipo: 'gasto', orcamento: 0 },
     { id: 'Familia', nome: 'Família e Pets (Filhos, Animais, Ajuda a familiares)', cor: '#f97316', tipo: 'gasto', orcamento: 0 },
@@ -22,11 +27,9 @@ const CATEGORIAS_PADRAO = [
     { id: 'Impostos', nome: 'Impostos e Taxas (IPVA, IPTU, Tarifas bancárias)', cor: '#78716c', tipo: 'gasto', orcamento: 0 },
     { id: 'Dividas', nome: 'Dívidas e Financiamentos (Empréstimos, Juros)', cor: '#b91c1c', tipo: 'gasto', orcamento: 0 },
     { id: 'Outros', nome: 'Outros e Imprevistos', cor: '#64748b', tipo: 'gasto', orcamento: 0 },
-    { id: 'Investimentos', nome: 'Investimentos & Poupança', cor: '#06b6d4', tipo: 'investimento', orcamento: 0 },
     { id: 'Reserva', nome: 'Reserva de Emergência', cor: '#84cc16', tipo: 'investimento', orcamento: 0 }
 ];
-// Categorias incluídas na versão 4 dos dados. Quem já usava o app recebe estas uma única vez, ao migrar.
-const CATEGORIAS_NOVAS_V4 = ['Assinaturas', 'CuidadosPessoais', 'Familia', 'Presentes', 'Impostos', 'Dividas', 'Outros', 'Reserva'];
+const CATEGORIAS_TODAS = [...CATEGORIAS_PADRAO, ...CATEGORIAS_SUGERIDAS];
 const FORMAS_PAGAMENTO = [
     { id: 'debito', nome: 'Débito' }, { id: 'credito', nome: 'Crédito' }, { id: 'pix', nome: 'Pix' },
     { id: 'dinheiro', nome: 'Dinheiro' }, { id: 'boleto', nome: 'Boleto' }
@@ -54,13 +57,61 @@ const chaveMes = iso => { const p = String(iso).split('-').map(Number); return p
 const mesValido = v => /^\d{4}-(0[1-9]|1[0-2])$/.test(String(v || ''));
 function diaDoMes(ano, mes, dia) { return ano + '-' + pad(mes) + '-' + pad(Math.min(dia, new Date(ano, mes, 0).getDate())); }
 function hojeISO() { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
-function abrir(id) { const m = document.getElementById(id); m.classList.remove('hidden'); m.classList.add('flex'); }
+function abrir(id) {
+    const m = document.getElementById(id);
+    m.classList.remove('hidden'); m.classList.add('flex');
+    const f = m.querySelector && m.querySelector('input:not([type=hidden]), select, button');
+    if (f && f.focus) setTimeout(() => f.focus(), 30);
+}
 function fechar(id) { const m = document.getElementById(id); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+const LIXEIRA = '<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+
+// Janelas próprias no lugar do confirm/alert do navegador, que mostram o endereço do site
+let dialogoResolve = null;
+function dialogo(texto, o = {}) {
+    return new Promise(res => {
+        dialogoResolve = res;
+        document.getElementById('confirmaTexto').textContent = texto;
+        const ok = document.getElementById('confirmaOk'), cancelar = document.getElementById('confirmaCancelar');
+        ok.textContent = o.ok || 'OK';
+        ok.className = 'px-4 py-2 text-xs font-bold text-white rounded-lg shadow ' + (o.perigo ? 'bg-rose-600 hover:bg-rose-700' : 'bg-sky-600 hover:bg-sky-700');
+        cancelar.textContent = o.cancelar || 'Cancelar';
+        cancelar.classList.toggle('hidden', !!o.apenasOk);
+        abrir('modalConfirma');
+    });
+}
+const confirmar = (texto, o) => dialogo(texto, o);
+const avisar = texto => dialogo(texto, { apenasOk: true });
+function fecharDialogo(v) {
+    fechar('modalConfirma');
+    const r = dialogoResolve; dialogoResolve = null;
+    if (r) r(v);
+}
+
+// Aviso rápido com opção de desfazer a última exclusão
+let desfazerSnap = null, toastTimer = null;
+function mostrarToast(msg, snap) {
+    desfazerSnap = snap || null;
+    const el = document.getElementById('toast');
+    el.innerHTML = `<span>${esc(msg)}</span>${snap ? '<button onclick="desfazer()" class="font-bold text-sky-300 hover:text-sky-200 px-2 py-1">Desfazer</button>' : ''}`;
+    el.classList.remove('hidden');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.add('hidden'), 8000);
+}
+function desfazer() {
+    if (!desfazerSnap) return;
+    estado = migrar(JSON.parse(desfazerSnap));
+    desfazerSnap = null;
+    document.getElementById('toast').classList.add('hidden');
+    salvar();
+}
 
 /* ============ Estado, migração e armazenamento ============ */
 let estado;
 let abaAtiva = 'resumo_geral';
-let filtros = { texto: '', cat: '', ordem: 'recentes' };
+let filtros = { texto: '', cat: '', pag: '', ordem: 'recentes' };
+let anosAbertos = new Set([new Date().getFullYear()]);
 let storageOk = true;
 let editando = null;
 
@@ -96,7 +147,7 @@ function normalizar(bruto, versaoOrigem) {
     const conv = v => emCentavos ? Math.round(num(v)) : Math.round(num(v) * 100);
     const ehLista = Array.isArray(bruto);
     const listaMeses = ehLista ? bruto : (bruto.meses || []);
-    const catsBrutas = !ehLista && Array.isArray(bruto.categorias) && bruto.categorias.length ? bruto.categorias : CATEGORIAS_PADRAO;
+    const catsBrutas = !ehLista && Array.isArray(bruto.categorias) && bruto.categorias.length ? bruto.categorias : CATEGORIAS_TODAS;
     const idsCat = new Set();
     const categorias = catsBrutas.filter(c => c && typeof c === 'object').map((c, i) => {
         let id = String(c.id || 'c_' + i).replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -111,11 +162,9 @@ function normalizar(bruto, versaoOrigem) {
         };
     });
     if (versaoOrigem < 4) {
-        // Versão 4: atualiza o nome de "Custos Fixos" (se ainda for o original) e inclui as categorias novas
+        // Versão 4: atualiza o nome de "Custos Fixos" (se ainda for o original)
         const fixo = categorias.find(c => c.id === 'CustosFixos' && c.nome === 'Custos Fixos (Aluguel, Luz, Internet)');
         if (fixo) fixo.nome = CATEGORIAS_PADRAO.find(c => c.id === 'CustosFixos').nome;
-        CATEGORIAS_PADRAO.filter(c => CATEGORIAS_NOVAS_V4.includes(c.id) && !categorias.some(x => x.id === c.id))
-            .forEach(c => categorias.push({ ...c }));
     }
     const usados = new Set();
     const reservados = ['sem', 'config', 'resumo_geral'];
@@ -127,7 +176,7 @@ function normalizar(bruto, versaoOrigem) {
         usados.add(id);
         let receitas = [];
         if (Array.isArray(m.receitas)) {
-            receitas = m.receitas.filter(r => r && typeof r === 'object').map(r => ({ id: String(r.id || uid()).replace(/[^a-zA-Z0-9_-]/g, '_'), descricao: String(r.descricao || 'Receita'), valor: conv(r.valor) }));
+            receitas = m.receitas.filter(r => r && typeof r === 'object').map(r => ({ id: String(r.id || uid()).replace(/[^a-zA-Z0-9_-]/g, '_'), descricao: String(r.descricao || 'Receita'), valor: conv(r.valor), fixaId: r.fixaId ? String(r.fixaId).replace(/[^a-zA-Z0-9_-]/g, '_') : '' }));
         } else if (num(m.salario) > 0) {
             receitas = [{ id: uid(), descricao: 'Salário', valor: conv(m.salario) }];
         }
@@ -149,7 +198,19 @@ function normalizar(bruto, versaoOrigem) {
             }))
         };
     });
-    return { versao: VERSAO_DADOS, saldoInicial: ehLista ? 0 : conv(bruto.saldoInicial), boasVindasOk: !ehLista && !!bruto.boasVindasOk, categorias, contasFixas: ehLista ? [] : normalizarFixas(bruto.contasFixas, categorias), meses };
+    const contasFixas = ehLista ? [] : normalizarFixas(bruto.contasFixas, categorias);
+    let cats = categorias;
+    if (versaoOrigem < 6) {
+        // Versão 6: tira as categorias sugeridas que nunca foram usadas nem mexidas (elas voltam pelo menu "+ Sugeridas")
+        const emUso = new Set(contasFixas.map(f => f.categoriaId));
+        meses.forEach(m => m.lancamentos.forEach(l => emUso.add(l.categoriaId)));
+        cats = categorias.filter(c => {
+            const sug = CATEGORIAS_SUGERIDAS.find(x => x.id === c.id);
+            return !(sug && sug.nome === c.nome && !c.orcamento && !emUso.has(c.id));
+        });
+    }
+    const feitoEm = !ehLista && /^\d{4}-\d{2}-\d{2}$/.test(String(bruto.ultimoBackup || '')) ? String(bruto.ultimoBackup) : '';
+    return { versao: VERSAO_DADOS, saldoInicial: ehLista ? 0 : conv(bruto.saldoInicial), boasVindasOk: !ehLista && !!bruto.boasVindasOk, ultimoBackup: feitoEm, categorias: cats, contasFixas, meses };
 }
 
 function normalizarFixas(lista, categorias) {
@@ -165,6 +226,7 @@ function normalizarFixas(lista, categorias) {
             descricao: String(f.descricao || 'Conta fixa'),
             valor: Math.max(0, Math.round(num(f.valor))),
             categoriaId: cat,
+            tipo: f.tipo === 'receita' ? 'receita' : 'gasto',
             pagamento: FORMAS_PAGAMENTO.some(p => p.id === f.pagamento) ? f.pagamento : '',
             dia: Math.min(31, Math.max(1, parseInt(f.dia) || 1)),
             inicio: mesValido(f.inicio) ? String(f.inicio) : mesAtualISO(),
@@ -174,13 +236,8 @@ function normalizarFixas(lista, categorias) {
 }
 
 function mesesIniciais() {
-    const lista = [];
-    for (let k = 0; k < 13; k++) {
-        const t = 2026 * 12 + 10 + k;
-        const ano = Math.floor(t / 12), mes = (t % 12) + 1;
-        lista.push({ id: 'm_' + ano + '_' + pad(mes), ano, mes, receitas: [], lancamentos: [] });
-    }
-    return lista;
+    const d = new Date(), ano = d.getFullYear(), mes = d.getMonth() + 1;
+    return [{ id: 'm_' + ano + '_' + pad(mes), ano, mes, receitas: [], lancamentos: [] }];
 }
 
 function contar(bruto) {
@@ -333,6 +390,7 @@ function renderizar() {
         renderizarConteudo();
         document.getElementById('avisoStorage').innerHTML = storageOk ? '' :
             '<div class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-sm">Este navegador não está permitindo salvar os dados. O que você lançar pode se perder ao fechar. Abra o arquivo no Chrome e use o botão Backup com frequência.</div>';
+        document.getElementById('avisoBackup').innerHTML = avisoBackup();
     } catch (err) {
         console.error(err);
         document.getElementById('conteudoPrincipal').innerHTML = '<div class="bg-rose-100 p-4 text-rose-700 rounded-xl text-sm">Erro ao renderizar os dados. Use Restaurar para carregar um backup.</div>';
@@ -349,32 +407,44 @@ function validarAba() {
 }
 
 function renderizarNav() {
-    const item = (id, icone, texto, extra) => `
-        <button onclick="trocarAba('${id}')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition ${abaAtiva === id ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}">
-            <span class="flex items-center space-x-3"><span>${icone}</span><span>${texto}</span></span>${extra || ''}
+    const item = (id, icone, texto) => `
+        <button onclick="trocarAba('${id}')" class="w-full flex items-center space-x-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition ${abaAtiva === id ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}">
+            <span>${icone}</span><span>${texto}</span>
         </button>`;
-    let htmlP = item('resumo_geral', '📊', 'Visão Geral') + item('fixas', '📌', 'Contas Fixas') + item('config', '⚙️', 'Categorias e Orçamento');
-    chavesTrimestres().forEach(k => {
-        const qtd = estado.meses.filter(m => triDe(m) === k).length;
-        htmlP += `
-            <button onclick="trocarAba('${k}')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition ${abaAtiva === k ? 'bg-sky-100 text-sky-800' : 'text-slate-600 hover:bg-slate-100'}">
-                <span class="flex items-center space-x-3"><span>📑</span><span>${rotuloTri(k)}</span></span>
-                <span class="text-[10px] text-slate-400">${qtd} ${qtd === 1 ? 'mês' : 'meses'}</span>
-            </button>`;
-    });
-    document.getElementById('navPrincipal').innerHTML = htmlP;
+    document.getElementById('navPrincipal').innerHTML = item('resumo_geral', '📊', 'Visão Geral') + item('fixas', '📌', 'Contas Fixas') + item('config', '⚙️', 'Categorias');
 
-    const seta = 'px-2 py-0.5 text-[11px] leading-none text-slate-400 hover:text-slate-900 disabled:opacity-25';
-    document.getElementById('navMeses').innerHTML = estado.meses.map((m, i) => `
-        <div class="flex items-center gap-1">
-            <button onclick="trocarAba('${m.id}')" class="flex-1 min-w-0 flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-medium transition text-left ${abaAtiva === m.id ? 'bg-slate-900 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-100'}">
-                <span>📅</span><span class="truncate">${esc(m.nome)}</span>
-            </button>
-            <div class="flex flex-col">
-                <button onclick="moverMes('${m.id}', -1)" aria-label="Mover ${esc(m.nome)} para cima" class="${seta}" ${i === 0 ? 'disabled' : ''}>▲</button>
-                <button onclick="moverMes('${m.id}', 1)" aria-label="Mover ${esc(m.nome)} para baixo" class="${seta}" ${i === estado.meses.length - 1 ? 'disabled' : ''}>▼</button>
+    // O ano do que está aberto fica sempre expandido
+    const ativo = estado.meses.find(m => m.id === abaAtiva);
+    const rt = /^(\d{4})-T/.exec(abaAtiva);
+    if (ativo && ativo.ano) anosAbertos.add(ativo.ano);
+    if (rt) anosAbertos.add(Number(rt[1]));
+
+    const datados = estado.meses.filter(m => m.ano && m.mes);
+    const anos = [...new Set(datados.map(m => m.ano))].sort((a, b) => a - b);
+    let html = '';
+    anos.forEach(ano => {
+        const aberto = anosAbertos.has(ano);
+        const meses = datados.filter(m => m.ano === ano).sort((a, b) => a.mes - b.mes);
+        const tris = [...new Set(meses.map(triDe))].sort();
+        html += `
+        <div>
+            <div class="flex items-center justify-between">
+                <button onclick="alternarAno(${ano})" aria-expanded="${aberto}" class="flex-1 text-left text-xs font-bold text-slate-700 py-1">${aberto ? '▾' : '▸'} ${ano}</button>
+                <div class="flex gap-1">${tris.map(k => `<button onclick="trocarAba('${k}')" aria-label="${rotuloTri(k)}" title="${rotuloTri(k)}" class="px-1.5 py-0.5 rounded text-[10px] font-bold ${abaAtiva === k ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">T${k.slice(-1)}</button>`).join('')}</div>
             </div>
-        </div>`).join('');
+            ${aberto ? `<div class="grid grid-cols-4 gap-1 mt-1">${meses.map(m => `<button onclick="trocarAba('${m.id}')" aria-label="${esc(m.nome)}" title="${esc(m.nome)}" class="py-1.5 rounded-md text-[11px] font-semibold transition ${abaAtiva === m.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}">${NOMES_MESES[m.mes - 1].slice(0, 3)}</button>`).join('')}</div>` : ''}
+        </div>`;
+    });
+    const sem = estado.meses.filter(m => !(m.ano && m.mes));
+    if (sem.length) {
+        html += `<div><p class="text-xs font-bold text-slate-700 py-1">Sem data</p>${sem.map(m => `<button onclick="trocarAba('${m.id}')" class="w-full text-left truncate px-2 py-1.5 rounded-md text-[11px] font-semibold ${abaAtiva === m.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}">${esc(m.nome)}</button>`).join('')}</div>`;
+    }
+    document.getElementById('navMeses').innerHTML = html;
+}
+
+function alternarAno(ano) {
+    if (anosAbertos.has(ano)) anosAbertos.delete(ano); else anosAbertos.add(ano);
+    renderizarNav();
 }
 
 function renderizarConteudo() {
@@ -387,13 +457,18 @@ function renderizarConteudo() {
 }
 
 function toggleMobileSidebar() {
-    document.getElementById('sidebar').classList.toggle('-translate-x-full');
+    const sb = document.getElementById('sidebar');
+    sb.classList.toggle('-translate-x-full');
     document.getElementById('sidebarOverlay').classList.toggle('hidden');
+    const fechado = sb.classList.contains('-translate-x-full');
+    const puxador = document.getElementById('puxador');
+    puxador.style.left = fechado ? '0' : '16rem';
+    puxador.setAttribute('aria-expanded', fechado ? 'false' : 'true');
 }
 
 function trocarAba(id) {
     abaAtiva = id;
-    filtros = { texto: '', cat: '', ordem: 'recentes' };
+    filtros = { texto: '', cat: '', pag: '', ordem: 'recentes' };
     renderizar();
     if (window.innerWidth < 768) {
         const sb = document.getElementById('sidebar');
@@ -568,28 +643,82 @@ function viewTrimestre(k) {
         </div>`;
 }
 
+function avisoBackup() {
+    const qtd = estado.meses.reduce((a, m) => a + m.lancamentos.length + m.receitas.length, 0);
+    if (qtd < 5) return '';
+    const ult = estado.ultimoBackup;
+    const dias = ult ? Math.floor((Date.now() - new Date(ult + 'T12:00:00').getTime()) / 86400000) : null;
+    if (ult && dias < 30) return '';
+    return `<div class="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-xs flex items-center justify-between gap-3">
+        <span>${ult ? 'Seu último backup foi há ' + dias + ' dias.' : 'Você ainda não fez backup dos seus dados.'} Eles ficam só neste aparelho.</span>
+        <button onclick="exportarDados()" class="shrink-0 bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-2 rounded-lg">Fazer backup</button>
+    </div>`;
+}
+
+function resumoPagamento(mes) {
+    if (!mes.lancamentos.length) return '';
+    const mapa = {};
+    mes.lancamentos.forEach(l => { const k = l.pagamento || '_'; mapa[k] = (mapa[k] || 0) + num(l.valor); });
+    const chaves = Object.keys(mapa).sort((a, b) => mapa[b] - mapa[a]);
+    return `<div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+            <div>
+                <h3 class="font-bold text-slate-900">Por forma de pagamento</h3>
+                <p class="text-xs text-slate-400">O total do crédito é o que vai para a fatura do cartão com os lançamentos deste mês.</p>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+                ${chaves.map(k => `
+                <div class="${k === 'credito' ? 'bg-sky-50 border-sky-200' : 'bg-slate-50 border-slate-100'} border rounded-xl p-3">
+                    <p class="text-[11px] font-bold text-slate-500 uppercase">${k === '_' ? 'Não informado' : nomePag(k)}</p>
+                    <p class="text-sm font-bold text-slate-900 mt-0.5">${brl(mapa[k])}</p>
+                </div>`).join('')}
+            </div>
+        </div>`;
+}
+
+// Sugere categoria e forma de pagamento pela última vez que você lançou a mesma descrição
+const chaveDesc = t => semAcento(String(t).replace(/\s*\(\d+\/\d+\)\s*$/, '')).trim();
+function acharSugestao(desc) {
+    const k = chaveDesc(desc);
+    if (!k) return null;
+    let achado = null;
+    estado.meses.forEach(m => m.lancamentos.forEach(l => {
+        if (chaveDesc(l.descricao) === k && l.categoriaId && (!achado || (l.data || '') >= (achado.data || ''))) achado = l;
+    }));
+    return achado ? { categoriaId: achado.categoriaId, pagamento: achado.pagamento || '' } : null;
+}
+function sugerirCategoria(mid) {
+    const s = acharSugestao(val('novoDesc_' + mid));
+    if (!s) return;
+    const cat = document.getElementById('novoCat_' + mid), pag = document.getElementById('novaPag_' + mid);
+    if (cat) cat.value = s.categoriaId;
+    if (pag) { pag.value = s.pagamento; mostrarParcelas(mid); }
+}
+
 /* ---- Contas fixas ---- */
 function viewFixas() {
     const campo = 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-medium';
     const rot = 'block text-[10px] font-bold text-slate-500 uppercase mb-1';
     const opcCat = sel => estado.categorias.map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.nome)}</option>`).join('');
     const opcPag = sel => '<option value="">Não informar</option>' + FORMAS_PAGAMENTO.map(f => `<option value="${f.id}" ${f.id === sel ? 'selected' : ''}>${f.nome}</option>`).join('');
-    const total = estado.contasFixas.reduce((a, f) => a + num(f.valor), 0);
+    const soma = t => estado.contasFixas.filter(f => f.tipo === t).reduce((a, f) => a + num(f.valor), 0);
+    const temG = estado.contasFixas.some(f => f.tipo !== 'receita'), temR = estado.contasFixas.some(f => f.tipo === 'receita');
     return `
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-1">
             <h2 class="text-xl font-bold text-slate-900">Contas Fixas</h2>
-            <p class="text-xs text-slate-500">Cadastre uma vez (aluguel, internet, assinaturas) e a conta entra sozinha em todos os meses a partir do mês de início, inclusive nos meses que você criar depois. Cada lançamento pode ser editado ou excluído só no mês dele.</p>
-            ${estado.contasFixas.length ? `<p class="text-sm font-bold text-slate-900 pt-1">Total por mês: ${brl(total)}</p>` : ''}
+            <p class="text-xs text-slate-500">Cadastre uma vez (aluguel, internet, salário) e a conta entra sozinha em todos os meses a partir do mês de início, inclusive nos meses que você criar depois. Cada lançamento pode ser editado ou excluído só no mês dele.</p>
+            ${temG ? `<p class="text-sm font-bold text-slate-900 pt-1">Gastos fixos por mês: ${brl(soma('gasto'))}</p>` : ''}
+            ${temR ? `<p class="text-sm font-bold text-slate-900">Receitas fixas por mês: ${brl(soma('receita'))}</p>` : ''}
         </div>
 
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <h3 class="font-bold text-slate-900">Nova conta fixa</h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="col-span-2"><label for="fixaDesc" class="${rot}">Descrição</label><input type="text" id="fixaDesc" placeholder="Ex: Aluguel" class="${campo}"></div>
+                <div><label for="fixaTipo" class="${rot}">Tipo</label><select id="fixaTipo" onchange="fixaTipoMudou()" class="${campo}"><option value="gasto">Gasto</option><option value="receita">Receita</option></select></div>
+                <div class="md:col-span-2"><label for="fixaDesc" class="${rot}">Descrição</label><input type="text" id="fixaDesc" placeholder="Ex: Aluguel, Salário" class="${campo}"></div>
                 <div><label for="fixaValor" class="${rot}">Valor (R$)</label><input type="number" step="0.01" inputmode="decimal" id="fixaValor" placeholder="0.00" class="${campo} text-right"></div>
                 <div><label for="fixaDia" class="${rot}">Dia do mês</label><input type="number" min="1" max="31" inputmode="numeric" id="fixaDia" value="5" class="${campo}"></div>
-                <div class="col-span-2"><label for="fixaCat" class="${rot}">Categoria</label><select id="fixaCat" class="${campo}">${opcCat('CustosFixos')}</select></div>
-                <div><label for="fixaPag" class="${rot}">Pagamento</label><select id="fixaPag" class="${campo}">${opcPag('')}</select></div>
+                <div id="boxFixaCat" class="col-span-2"><label for="fixaCat" class="${rot}">Categoria</label><select id="fixaCat" class="${campo}">${opcCat('CustosFixos')}</select></div>
+                <div id="boxFixaPag"><label for="fixaPag" class="${rot}">Pagamento</label><select id="fixaPag" class="${campo}">${opcPag('')}</select></div>
                 <div><label for="fixaInicio" class="${rot}">A partir de</label><input type="month" id="fixaInicio" value="${mesAtualISO()}" class="${campo}"></div>
                 <div><label for="fixaFim" class="${rot}">Até (opcional)</label><input type="month" id="fixaFim" class="${campo}"></div>
                 <div class="col-span-2 flex items-end"><button onclick="adicionarFixa()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm rounded-xl shadow">+ Adicionar conta fixa</button></div>
@@ -604,13 +733,15 @@ function viewFixas() {
                     <input type="number" step="0.01" inputmode="decimal" value="${reais(f.valor)}" aria-label="Valor" onchange="editarFixa('${f.id}', 'valor', this.value)" class="${campo} w-28 text-right">
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    <div class="col-span-2 md:col-span-1"><label class="${rot}">Categoria</label><select onchange="editarFixa('${f.id}', 'categoriaId', this.value)" class="${campo}">${opcCat(f.categoriaId)}</select></div>
+                    ${f.tipo === 'receita'
+                        ? `<div class="col-span-2 md:col-span-2 flex items-end"><span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1.5 rounded-lg">Receita fixa</span></div>`
+                        : `<div class="col-span-2 md:col-span-1"><label class="${rot}">Categoria</label><select onchange="editarFixa('${f.id}', 'categoriaId', this.value)" class="${campo}">${opcCat(f.categoriaId)}</select></div>
+                           <div><label class="${rot}">Pagamento</label><select onchange="editarFixa('${f.id}', 'pagamento', this.value)" class="${campo}">${opcPag(f.pagamento)}</select></div>`}
                     <div><label class="${rot}">Dia</label><input type="number" min="1" max="31" inputmode="numeric" value="${f.dia}" onchange="editarFixa('${f.id}', 'dia', this.value)" class="${campo}"></div>
-                    <div><label class="${rot}">Pagamento</label><select onchange="editarFixa('${f.id}', 'pagamento', this.value)" class="${campo}">${opcPag(f.pagamento)}</select></div>
                     <div><label class="${rot}">A partir de</label><input type="month" value="${f.inicio}" onchange="editarFixa('${f.id}', 'inicio', this.value)" class="${campo}"></div>
                     <div><label class="${rot}">Até</label><input type="month" value="${f.fim}" onchange="editarFixa('${f.id}', 'fim', this.value)" class="${campo}"></div>
                 </div>
-                <button onclick="removerFixa('${f.id}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-lg">Excluir conta fixa</button>
+                <button onclick="removerFixa('${f.id}')" aria-label="Excluir conta fixa" class="inline-flex items-center gap-1.5 text-rose-500 hover:text-rose-700 font-bold text-xs bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-lg">${LIXEIRA} Excluir conta fixa</button>
             </div>`).join('') : '<p class="text-sm text-slate-400 italic">Nenhuma conta fixa cadastrada ainda.</p>'}
         </div>`;
 }
@@ -646,15 +777,18 @@ function viewConfigCorpo() {
             <p class="text-[11px] text-slate-400">Entra no saldo acumulado a partir do primeiro mês da lista.</p>
         </div>
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-2">
                 <h3 class="font-bold text-slate-900">Categorias</h3>
-                <button onclick="adicionarCategoria()" class="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-lg shadow">+ Nova categoria</button>
+                <div class="flex items-center gap-2">
+                    ${CATEGORIAS_SUGERIDAS.some(x => !estado.categorias.some(c => c.id === x.id)) ? `<select onchange="adicionarSugerida(this.value)" aria-label="Adicionar categoria sugerida" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold"><option value="">+ Sugeridas</option>${CATEGORIAS_SUGERIDAS.filter(x => !estado.categorias.some(c => c.id === x.id)).map(x => `<option value="${x.id}">${esc(curto(x.nome))}</option>`).join('')}</select>` : ''}
+                    <button onclick="adicionarCategoria()" class="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-lg shadow">+ Nova categoria</button>
+                </div>
             </div>
             <div class="space-y-3">
                 ${estado.categorias.map(c => `
                 <div class="border border-slate-200 rounded-xl p-3 space-y-2">
                     <div class="flex items-center gap-2">
-                        <input type="color" value="${c.cor}" aria-label="Cor" onchange="editarCategoria('${c.id}', 'cor', this.value)" class="w-10 h-10 p-0.5 bg-white border border-slate-300 rounded-lg shrink-0">
+                        <input type="color" value="${c.cor}" aria-label="Cor" onchange="editarCategoria('${c.id}', 'cor', this.value)" class="w-10 h-10 rounded-lg shrink-0 cursor-pointer">
                         <input type="text" value="${esc(c.nome)}" aria-label="Nome da categoria" onchange="editarCategoria('${c.id}', 'nome', this.value)" class="${campo} flex-1 min-w-0">
                     </div>
                     <div class="flex flex-wrap items-end gap-2">
@@ -669,7 +803,7 @@ function viewConfigCorpo() {
                             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Limite mensal (R$)</label>
                             <input type="number" step="0.01" inputmode="decimal" value="${c.orcamento ? reais(c.orcamento) : ''}" placeholder="0" ${c.tipo === 'investimento' ? 'disabled' : ''} onchange="editarCategoria('${c.id}', 'orcamento', this.value)" class="${campo} w-32 text-right disabled:opacity-40">
                         </div>
-                        <button onclick="removerCategoria('${c.id}')" class="ml-auto text-rose-500 hover:text-rose-700 font-bold text-xs bg-rose-50 hover:bg-rose-100 px-3 py-2.5 rounded-lg">Excluir</button>
+                        <button onclick="removerCategoria('${c.id}')" aria-label="Excluir categoria" class="ml-auto inline-flex items-center gap-1.5 text-rose-500 hover:text-rose-700 font-bold text-xs bg-rose-50 hover:bg-rose-100 px-3 py-2.5 rounded-lg">${LIXEIRA} Excluir</button>
                     </div>
                 </div>`).join('')}
             </div>
@@ -682,6 +816,8 @@ function viewMes(mes) {
     const lim = limitesMes(mes);
     const campo = 'bg-slate-50 border border-slate-300 rounded-xl p-2 text-sm font-medium';
 
+    const chavePrev = mes.ano && mes.mes ? mes.ano * 12 + mes.mes - 1 : null;
+    const prev = chavePrev ? estado.meses.find(m => m.ano && m.mes && m.ano * 12 + m.mes === chavePrev) : null;
     const orc = estado.categorias.filter(c => c.tipo === 'gasto').map(c => {
         const total = mes.lancamentos.filter(l => l.categoriaId === c.id).reduce((a, l) => a + num(l.valor), 0);
         const lm = num(c.orcamento);
@@ -691,7 +827,17 @@ function viewMes(mes) {
             if (total > lm) { cor = '#e11d48'; corStatus = '#e11d48'; status = 'Estourou ' + brl(total - lm); }
             else { status = 'Faltam ' + brl(lm - total); if (total >= lm * 0.8) { cor = '#f59e0b'; corStatus = '#b45309'; } }
         }
-        return { c, total, lm, pct, cor, status, corStatus };
+        let comp = '', corComp = '#64748b';
+        if (prev) {
+            const antes = prev.lancamentos.filter(l => l.categoriaId === c.id).reduce((a, l) => a + num(l.valor), 0);
+            if (antes === 0 && total > 0) comp = 'Sem gasto no mês anterior';
+            else if (antes > 0) {
+                const d = (total - antes) / antes * 100;
+                comp = (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + Math.abs(d).toFixed(0) + '% vs mês anterior';
+                corComp = d > 0 ? '#e11d48' : d < 0 ? '#059669' : '#64748b';
+            }
+        }
+        return { c, total, lm, pct, cor, status, corStatus, comp, corComp };
     });
     const estourados = orc.filter(x => x.lm > 0 && x.total > x.lm).length;
 
@@ -701,7 +847,7 @@ function viewMes(mes) {
                 <span class="text-xs font-bold text-sky-600 uppercase tracking-wider">Mês selecionado</span>
                 <h2 class="text-2xl font-bold text-slate-900">${esc(mes.nome)}</h2>
                 <div class="flex flex-wrap items-center gap-2 mt-2">
-                    <button onclick="excluirMes('${mes.id}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs bg-rose-50 hover:bg-rose-100 px-2.5 py-2 rounded-lg transition">Excluir mês</button>
+                    <button onclick="excluirMes('${mes.id}')" aria-label="Excluir mês" class="inline-flex items-center gap-1.5 text-rose-500 hover:text-rose-700 font-bold text-xs bg-rose-50 hover:bg-rose-100 px-2.5 py-2 rounded-lg transition">${LIXEIRA} Excluir mês</button>
                 </div>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
@@ -720,7 +866,7 @@ function viewMes(mes) {
             <div class="flex items-center gap-2">
                 <input type="text" value="${esc(r.descricao)}" aria-label="Descrição da receita" onchange="editarReceita('${mes.id}', '${r.id}', 'descricao', this.value)" class="${campo} flex-1 min-w-0">
                 <input type="number" step="0.01" inputmode="decimal" value="${reais(r.valor)}" aria-label="Valor da receita" onchange="editarReceita('${mes.id}', '${r.id}', 'valor', this.value)" class="${campo} w-28 text-right">
-                <button onclick="removerReceita('${mes.id}', '${r.id}')" aria-label="Remover receita" class="text-rose-500 hover:text-rose-700 font-bold text-xs bg-rose-50 px-2.5 py-2.5 rounded-lg">✕</button>
+                <button onclick="removerReceita('${mes.id}', '${r.id}')" aria-label="Remover receita" class="text-rose-500 hover:text-rose-700 bg-rose-50 px-2.5 py-2.5 rounded-lg">${LIXEIRA}</button>
             </div>`).join('') : '<p class="text-sm text-slate-400 italic">Nenhuma receita neste mês ainda.</p>'}
             <div class="flex flex-wrap items-end gap-2 pt-2 border-t border-slate-100">
                 <div class="flex-1 min-w-[8rem]">
@@ -750,9 +896,11 @@ function viewMes(mes) {
                     </div>
                     <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden"><div class="h-2.5 rounded-full" style="width:${Math.min(x.pct, 100)}%;background-color:${x.cor}"></div></div>
                     ${x.status ? `<p class="text-[11px] mt-0.5 font-semibold" style="color:${x.corStatus}">${x.status}</p>` : ''}
+                    ${x.comp ? `<p class="text-[11px] mt-0.5" style="color:${x.corComp}">${x.comp}</p>` : ''}
                 </div>`).join('')}
             </div>
         </div>
+        ${resumoPagamento(mes)}
 
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <h3 class="font-bold text-slate-900">Adicionar gasto ou investimento</h3>
@@ -767,7 +915,7 @@ function viewMes(mes) {
                 </div>
                 <div>
                     <label for="novoDesc_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Descrição</label>
-                    <input type="text" id="novoDesc_${mes.id}" placeholder="Ex: Mercado, Tesouro" class="${campo} w-full">
+                    <input type="text" id="novoDesc_${mes.id}" placeholder="Ex: Mercado, Tesouro" onchange="sugerirCategoria('${mes.id}')" class="${campo} w-full">
                 </div>
                 <div>
                     <label for="novoValor_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Valor (R$)</label>
@@ -782,11 +930,16 @@ function viewMes(mes) {
 
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <h3 class="font-bold text-slate-900">Lançamentos do mês</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
                 <input type="search" id="filtroTexto" value="${esc(filtros.texto)}" placeholder="Buscar por descrição" aria-label="Buscar" oninput="filtrar('texto', this.value, '${mes.id}')" class="${campo}">
                 <select aria-label="Filtrar por categoria" onchange="filtrar('cat', this.value, '${mes.id}')" class="${campo}">
                     <option value="">Todas as categorias</option>
                     ${estado.categorias.map(c => `<option value="${c.id}" ${filtros.cat === c.id ? 'selected' : ''}>${esc(curto(c.nome))}</option>`).join('')}
+                </select>
+                <select aria-label="Filtrar por forma de pagamento" onchange="filtrar('pag', this.value, '${mes.id}')" class="${campo}">
+                    <option value="">Todas as formas</option>
+                    ${FORMAS_PAGAMENTO.map(f => `<option value="${f.id}" ${filtros.pag === f.id ? 'selected' : ''}>${f.nome}</option>`).join('')}
+                    <option value="_" ${filtros.pag === '_' ? 'selected' : ''}>Não informado</option>
                 </select>
                 <select aria-label="Ordenar" onchange="filtrar('ordem', this.value, '${mes.id}')" class="${campo}">
                     <option value="recentes" ${filtros.ordem === 'recentes' ? 'selected' : ''}>Data: mais recente</option>
@@ -834,6 +987,7 @@ function renderLista(mes) {
     const q = semAcento(filtros.texto);
     if (q) itens = itens.filter(l => semAcento(l.descricao).includes(q) || semAcento(catDoItem(l).nome).includes(q));
     if (filtros.cat) itens = itens.filter(l => l.categoriaId === filtros.cat);
+    if (filtros.pag) itens = itens.filter(l => (l.pagamento || '_') === filtros.pag);
     if (filtros.ordem === 'maior') itens.sort((a, b) => num(b.valor) - num(a.valor));
     else if (filtros.ordem === 'antigos') itens.sort((a, b) => a.data.localeCompare(b.data));
     else itens.sort((a, b) => b.data.localeCompare(a.data));
@@ -852,7 +1006,7 @@ function renderLista(mes) {
                 <div class="flex items-center gap-2 shrink-0">
                     <span class="text-sm font-bold ${inv ? 'text-cyan-600' : 'text-rose-600'}">${brl(l.valor)}</span>
                     <button onclick="abrirEdicao('${mes.id}', '${l.id}')" class="text-sky-700 hover:text-sky-900 font-bold text-xs bg-sky-50 px-2.5 py-2 rounded-lg">Editar</button>
-                    <button onclick="removerLanc('${mes.id}', '${l.id}')" aria-label="Excluir lançamento" class="text-rose-500 hover:text-rose-700 font-bold text-xs bg-rose-50 px-2.5 py-2 rounded-lg">✕</button>
+                    <button onclick="removerLanc('${mes.id}', '${l.id}')" aria-label="Excluir lançamento" class="text-rose-500 hover:text-rose-700 bg-rose-50 px-2.5 py-2 rounded-lg">${LIXEIRA}</button>
                 </div>
             </div>`; }).join('')}</div>`;
 }
@@ -866,7 +1020,8 @@ function aplicarFixas(m) {
     estado.contasFixas.forEach(f => {
         if (m.fixasAplicadas.includes(f.id)) return;
         if (k < chaveMes(f.inicio) || (f.fim && k > chaveMes(f.fim))) return;
-        m.lancamentos.push({ id: uid(), data: diaDoMes(m.ano, m.mes, f.dia), categoriaId: f.categoriaId, descricao: f.descricao, valor: f.valor, pagamento: f.pagamento, grupo: null, parcela: '', fixaId: f.id });
+        if (f.tipo === 'receita') m.receitas.push({ id: uid(), descricao: f.descricao, valor: f.valor, fixaId: f.id });
+        else m.lancamentos.push({ id: uid(), data: diaDoMes(m.ano, m.mes, f.dia), categoriaId: f.categoriaId, descricao: f.descricao, valor: f.valor, pagamento: f.pagamento, grupo: null, parcela: '', fixaId: f.id });
         m.fixasAplicadas.push(f.id);
     });
 }
@@ -882,7 +1037,13 @@ function garantirMesAtual() {
     for (let k = ult + 1; k <= alvo; k++) mesDoCalendario(Math.floor((k - 1) / 12), ((k - 1) % 12) + 1);
 }
 
+function fixaTipoMudou() {
+    const receita = val('fixaTipo') === 'receita';
+    ['boxFixaCat', 'boxFixaPag'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', receita); });
+}
+
 function adicionarFixa() {
+    const tipo = val('fixaTipo') === 'receita' ? 'receita' : 'gasto';
     const desc = val('fixaDesc').trim(), v = centavos(val('fixaValor')), dia = parseInt(val('fixaDia')) || 0;
     const ini = val('fixaInicio'), fim = val('fixaFim');
     let msg = '';
@@ -890,8 +1051,9 @@ function adicionarFixa() {
     else if (dia < 1 || dia > 31) msg = 'Informe o dia do mês, de 1 a 31.';
     else if (!mesValido(ini)) msg = 'Informe o mês de início (formato 2026-11).';
     else if (fim && (!mesValido(fim) || chaveMes(fim) < chaveMes(ini))) msg = 'O mês final precisa ser igual ou posterior ao inicial.';
-    if (msg) { alert(msg); return; }
-    estado.contasFixas.push({ id: 'f_' + uid(), descricao: desc, valor: v, categoriaId: val('fixaCat'), pagamento: val('fixaPag'), dia, inicio: ini, fim });
+    if (msg) { avisar(msg); return; }
+    const catPadrao = (estado.categorias.find(c => c.tipo === 'gasto') || estado.categorias[0] || {}).id || null;
+    estado.contasFixas.push({ id: 'f_' + uid(), descricao: desc, valor: v, tipo, categoriaId: tipo === 'receita' ? catPadrao : val('fixaCat'), pagamento: tipo === 'receita' ? '' : val('fixaPag'), dia, inicio: ini, fim });
     aplicarFixasTodos();
     salvar();
 }
@@ -905,12 +1067,14 @@ function sincronizarFixa(f) {
         if (k < agora) return;
         if (k < ini || k > fim) {
             m.lancamentos = m.lancamentos.filter(l => l.fixaId !== f.id);
+            m.receitas = m.receitas.filter(r => r.fixaId !== f.id);
             m.fixasAplicadas = m.fixasAplicadas.filter(x => x !== f.id);
             return;
         }
         m.lancamentos.forEach(l => {
             if (l.fixaId === f.id) { l.descricao = f.descricao; l.valor = f.valor; l.categoriaId = f.categoriaId; l.pagamento = f.pagamento; l.data = diaDoMes(m.ano, m.mes, f.dia); }
         });
+        m.receitas.forEach(r => { if (r.fixaId === f.id) { r.descricao = f.descricao; r.valor = f.valor; } });
     });
     aplicarFixasTodos();
 }
@@ -927,19 +1091,25 @@ function editarFixa(id, campo, v) {
     sincronizarFixa(f);
     salvar();
 }
-function removerFixa(id) {
+async function removerFixa(id) {
     const f = estado.contasFixas.find(x => x.id === id);
-    if (!f || !confirm('Excluir a conta fixa "' + f.descricao + '"? Ela deixa de entrar nos próximos meses.')) return;
-    const tudo = confirm('Remover também os lançamentos dela do mês atual e dos meses passados? OK remove tudo, Cancelar mantém o histórico.');
+    if (!f || !(await confirmar('Excluir a conta fixa "' + f.descricao + '"? Ela deixa de entrar nos próximos meses.', { ok: 'Excluir', perigo: true }))) return;
+    const tudo = await confirmar('Remover também os lançamentos dela do mês atual e dos meses passados?', { ok: 'Remover tudo', cancelar: 'Manter histórico', perigo: true });
+    const snap = JSON.stringify(estado);
     const agora = hojeChave();
     estado.meses.forEach(m => {
         const k = m.ano && m.mes ? m.ano * 12 + m.mes : -1;
-        if (tudo || k > agora) m.lancamentos = m.lancamentos.filter(l => l.fixaId !== id);
+        if (tudo || k > agora) {
+            m.lancamentos = m.lancamentos.filter(l => l.fixaId !== id);
+            m.receitas = m.receitas.filter(r => r.fixaId !== id);
+        }
         m.lancamentos.forEach(l => { if (l.fixaId === id) l.fixaId = ''; });
+        m.receitas.forEach(r => { if (r.fixaId === id) r.fixaId = ''; });
         m.fixasAplicadas = m.fixasAplicadas.filter(x => x !== id);
     });
     estado.contasFixas = estado.contasFixas.filter(x => x.id !== id);
     salvar();
+    mostrarToast('Conta fixa excluída.', snap);
 }
 
 /* ============ Ações ============ */
@@ -966,19 +1136,28 @@ function editarCategoria(id, campo, v) {
     else if (campo === 'orcamento') c.orcamento = Math.max(0, centavos(v));
     salvar();
 }
-function removerCategoria(id) {
-    const usados = estado.meses.reduce((a, m) => a + m.lancamentos.filter(l => l.categoriaId === id).length, 0);
-    if (usados) { alert('Esta categoria tem ' + usados + ' lançamento(s). Mude a categoria deles antes de excluir.'); return; }
-    if (estado.categorias.length <= 1) { alert('Mantenha ao menos uma categoria.'); return; }
-    if (!confirm('Excluir esta categoria?')) return;
+function adicionarSugerida(id) {
+    const sug = CATEGORIAS_SUGERIDAS.find(x => x.id === id);
+    if (!sug || estado.categorias.some(c => c.id === id)) return;
+    estado.categorias.push({ ...sug });
+    salvar();
+}
+async function removerCategoria(id) {
+    const usados = estado.meses.reduce((a, m) => a + m.lancamentos.filter(l => l.categoriaId === id).length, 0)
+        + estado.contasFixas.filter(f => f.categoriaId === id).length;
+    if (usados) { avisar('Esta categoria está em uso (' + usados + ' lançamento(s) ou conta(s) fixa(s)). Mude a categoria deles antes de excluir.'); return; }
+    if (estado.categorias.length <= 1) { avisar('Mantenha ao menos uma categoria.'); return; }
+    if (!(await confirmar('Excluir esta categoria?', { ok: 'Excluir', perigo: true }))) return;
+    const snap = JSON.stringify(estado);
     estado.categorias = estado.categorias.filter(c => c.id !== id);
     salvar();
+    mostrarToast('Categoria excluída.', snap);
 }
 
 function adicionarReceita(mid) {
     const m = achaMes(mid), v = centavos(val('recVal_' + mid));
     if (!m) return;
-    if (v <= 0) { alert('Informe um valor maior que zero.'); return; }
+    if (v <= 0) { avisar('Informe um valor maior que zero.'); return; }
     m.receitas.push({ id: uid(), descricao: val('recDesc_' + mid).trim() || 'Receita', valor: v });
     salvar();
 }
@@ -991,20 +1170,22 @@ function editarReceita(mid, rid, campo, v) {
 function removerReceita(mid, rid) {
     const m = achaMes(mid);
     if (!m) return;
+    const snap = JSON.stringify(estado);
     m.receitas = m.receitas.filter(r => r.id !== rid);
     salvar();
+    mostrarToast('Receita excluída.', snap);
 }
 
 function adicionarLanc(mid) {
     const m = achaMes(mid);
     if (!m) return;
     const data = val('novaData_' + mid), desc = val('novoDesc_' + mid).trim(), v = centavos(val('novoValor_' + mid));
-    if (!desc || v <= 0) { alert('Preencha a descrição e um valor maior que zero.'); return; }
+    if (!desc || v <= 0) { avisar('Preencha a descrição e um valor maior que zero.'); return; }
     const lim = limitesMes(m);
-    if (!data || (lim && (data < lim.ini || data > lim.fim))) { alert('A data precisa estar dentro de ' + m.nome + '.'); return; }
+    if (!data || (lim && (data < lim.ini || data > lim.fim))) { avisar('A data precisa estar dentro de ' + m.nome + '.'); return; }
     const pag = val('novaPag_' + mid);
     const parcelas = FORMAS_COM_PARCELA.includes(pag) ? (parseInt(val('novaParc_' + mid)) || 1) : 1;
-    if (parcelas > 48) { alert('O máximo é 48 parcelas.'); return; }
+    if (parcelas > 48) { avisar('O máximo é 48 parcelas.'); return; }
     if (parcelas > 1 && lim) {
         gerarSerie(data, val('novoCat_' + mid), desc, v, pag, parcelas);
     } else {
@@ -1040,20 +1221,23 @@ function gerarSerie(data, catId, desc, valor, pagamento, qtd) {
     }
 }
 
-function removerLanc(mid, lid) {
+async function removerLanc(mid, lid) {
     const m = achaMes(mid), l = m && m.lancamentos.find(x => x.id === lid);
-    if (!l || !confirm('Excluir este lançamento?')) return;
+    if (!l) return;
     const n = parseInt(l.parcela) || 0;
     const depois = y => l.grupo && y.grupo === l.grupo && (parseInt(y.parcela) || 0) > n;
     let seguintes = false;
     if (estado.meses.some(x => x.lancamentos.some(depois))) {
-        seguintes = confirm('Este lançamento faz parte de uma série. Excluir também as parcelas seguintes?');
+        seguintes = await confirmar('Este lançamento faz parte de uma série. Excluir também as parcelas seguintes?', { ok: 'Excluir também', cancelar: 'Só este', perigo: true });
     }
+    const snap = JSON.stringify(estado);
     estado.meses.forEach(x => {
         x.lancamentos = x.lancamentos.filter(y => y.id !== lid && !(seguintes && depois(y)));
     });
     salvar();
+    mostrarToast(seguintes ? 'Lançamento e parcelas seguintes excluídos.' : 'Lançamento excluído.', snap);
 }
+
 function abrirEdicao(mid, lid) {
     const m = achaMes(mid), l = m && m.lancamentos.find(x => x.id === lid);
     if (!l) return;
@@ -1088,20 +1272,16 @@ function salvarEdicao() {
     salvar();
 }
 
-function moverMes(id, dir) {
-    const i = estado.meses.findIndex(m => m.id === id), j = i + dir;
-    if (i < 0 || j < 0 || j >= estado.meses.length) return;
-    [estado.meses[i], estado.meses[j]] = [estado.meses[j], estado.meses[i]];
-    salvar();
-}
-function excluirMes(id) {
+async function excluirMes(id) {
     const m = achaMes(id);
     if (!m) return;
     const q = m.lancamentos.length;
-    if (!confirm('Excluir ' + m.nome + ', com ' + q + (q === 1 ? ' lançamento' : ' lançamentos') + ' e suas receitas? Isso não pode ser desfeito.')) return;
+    if (!(await confirmar('Excluir ' + m.nome + ', com ' + q + (q === 1 ? ' lançamento' : ' lançamentos') + ' e suas receitas?', { ok: 'Excluir mês', perigo: true }))) return;
+    const snap = JSON.stringify(estado);
     estado.meses = estado.meses.filter(x => x.id !== id);
     abaAtiva = 'resumo_geral';
     salvar();
+    mostrarToast('Mês excluído.', snap);
 }
 
 function posicaoCronologica(ano, mes) {
@@ -1141,6 +1321,48 @@ function confirmarNovoMes() {
     salvar();
 }
 
+/* ============ Lançamento rápido ============ */
+let ultimaCatRapida = '';
+function abrirRapido() {
+    const gastoPadrao = (estado.categorias.find(c => c.tipo === 'gasto') || estado.categorias[0] || {}).id || '';
+    const cat = estado.categorias.some(c => c.id === ultimaCatRapida) ? ultimaCatRapida : gastoPadrao;
+    document.getElementById('rapCat').innerHTML = estado.categorias.map(c => `<option value="${c.id}" ${c.id === cat ? 'selected' : ''}>${esc(c.nome)}</option>`).join('');
+    document.getElementById('rapPag').innerHTML = '<option value="">Não informar</option>' + FORMAS_PAGAMENTO.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+    document.getElementById('rapValor').value = '';
+    document.getElementById('rapDesc').value = '';
+    document.getElementById('rapData').value = hojeISO();
+    document.getElementById('rapParc').value = '1';
+    document.getElementById('boxRapParc').classList.add('hidden');
+    document.getElementById('rapErro').classList.add('hidden');
+    abrir('modalRapido');
+}
+function rapidoMostrarParcelas() {
+    document.getElementById('boxRapParc').classList.toggle('hidden', !FORMAS_COM_PARCELA.includes(val('rapPag')));
+}
+function sugerirRapido() {
+    const s = acharSugestao(val('rapDesc'));
+    if (!s) return;
+    document.getElementById('rapCat').value = s.categoriaId;
+    document.getElementById('rapPag').value = s.pagamento;
+    rapidoMostrarParcelas();
+}
+function salvarRapido() {
+    const v = centavos(val('rapValor')), desc = val('rapDesc').trim(), data = val('rapData'), cat = val('rapCat'), pag = val('rapPag');
+    const parcelas = FORMAS_COM_PARCELA.includes(pag) ? (parseInt(val('rapParc')) || 1) : 1;
+    const ano = parseInt(data.slice(0, 4)), mes = parseInt(data.slice(5, 7));
+    let msg = '';
+    if (v <= 0 || !desc) msg = 'Informe o valor e a descrição.';
+    else if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || !(ano >= 1900 && ano <= 2999) || !(mes >= 1 && mes <= 12)) msg = 'Informe uma data válida.';
+    else if (parcelas < 1 || parcelas > 48) msg = 'As parcelas vão de 1 a 48.';
+    if (msg) { const e = document.getElementById('rapErro'); e.textContent = msg; e.classList.remove('hidden'); return; }
+    ultimaCatRapida = cat;
+    if (parcelas > 1) gerarSerie(data, cat, desc, v, pag, parcelas);
+    else mesDoCalendario(ano, mes).lancamentos.push({ id: uid(), data, categoriaId: cat, descricao: desc, valor: v, pagamento: pag, grupo: null, parcela: '', fixaId: '' });
+    fechar('modalRapido');
+    salvar();
+    mostrarToast('Lançamento salvo em ' + NOMES_MESES[mes - 1] + ' de ' + ano + '.');
+}
+
 /* ============ Backup, restauração e CSV ============ */
 function baixar(conteudo, tipo, nome) {
     const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
@@ -1150,24 +1372,26 @@ function baixar(conteudo, tipo, nome) {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 function exportarDados() {
+    estado.ultimoBackup = hojeISO();
     baixar(JSON.stringify(estado, null, 2), 'application/json', 'Backup_Financeiro_' + hojeISO() + '.json');
+    salvar();
 }
 function importarDados(event) {
     const arquivo = event.target.files[0];
     if (!arquivo) return;
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = async e => {
         try {
             const imp = JSON.parse(e.target.result);
             const ok = Array.isArray(imp) ? imp.every(m => m && typeof m === 'object' && m.id) : (imp && Array.isArray(imp.meses));
-            if (!ok) { alert('Arquivo inválido.'); return; }
-            if (!confirm('Restaurar este backup vai substituir todos os dados atuais. Continuar?')) return;
+            if (!ok) { avisar('Arquivo inválido.'); return; }
+            if (!(await confirmar('Restaurar este backup vai substituir todos os dados atuais. Continuar?', { ok: 'Restaurar', perigo: true }))) return;
             estado = migrar(imp);
             abaAtiva = 'resumo_geral';
             salvar();
-            alert('Backup restaurado com sucesso!');
+            mostrarToast('Backup restaurado com sucesso.');
         } catch (err) {
-            alert('Erro ao carregar o arquivo JSON.');
+            avisar('Erro ao carregar o arquivo JSON.');
         }
     };
     reader.readAsText(arquivo);
@@ -1207,6 +1431,28 @@ function registrarServiceWorker() {
     if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
+// Gestos no celular: arrastar da borda esquerda abre o menu, arrastar para a esquerda fecha
+let toqueX = null, toqueY = null;
+function configurarGestos() {
+    document.addEventListener('touchstart', e => { const t = e.touches[0]; toqueX = t.clientX; toqueY = t.clientY; }, { passive: true });
+    document.addEventListener('touchend', e => {
+        if (toqueX === null || window.innerWidth >= 768) return;
+        const t = e.changedTouches[0], dx = t.clientX - toqueX, dy = Math.abs(t.clientY - toqueY);
+        const fechado = document.getElementById('sidebar').classList.contains('-translate-x-full');
+        if (dy < 60) {
+            if (fechado && toqueX < 24 && dx > 60) toggleMobileSidebar();
+            else if (!fechado && dx < -60) toggleMobileSidebar();
+        }
+        toqueX = null;
+    }, { passive: true });
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        const aberta = id => !document.getElementById(id).classList.contains('hidden');
+        if (aberta('modalConfirma')) fecharDialogo(false);
+        else ['modalRapido', 'modalLanc', 'modalMes'].forEach(id => { if (aberta(id)) fechar(id); });
+    });
+}
+
 async function iniciar() {
     aplicarTema();
     if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', aplicarTema);
@@ -1224,6 +1470,8 @@ async function iniciar() {
         };
     }
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    if (document.addEventListener) configurarGestos();
     registrarServiceWorker();
 }
+
 iniciar();
