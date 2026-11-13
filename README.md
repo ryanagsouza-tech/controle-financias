@@ -35,19 +35,36 @@ Os dados são gravados no IndexedDB do próprio navegador. Nada é enviado para 
 
 ## Estrutura dos arquivos
 
-| Arquivo | Para que serve |
+| Arquivo ou pasta | Para que serve |
 |---|---|
-| `index.html` | Estrutura da página e das janelas (adicionar mês, editar lançamento) |
-| `style.css` | Estilos. É gerado pelo Tailwind a partir de `src/input.css` |
-| `app.js` | Toda a lógica: dados, cálculos, telas e armazenamento |
-| `manifest.webmanifest` | Nome, cores e ícones para instalar como app |
-| `sw.js` | Guarda os arquivos para abrir sem internet |
-| `icons/` | Ícones do app |
-| `src/input.css` | Seus ajustes de CSS e o tema escuro |
+| `index.html` | Estrutura da página. Não tem JavaScript dentro dele |
+| `style.css` | Estilos gerados pelo Tailwind a partir de `src/input.css` |
+| `js/main.js` | Ponto de entrada: liga os eventos e carrega os dados |
+| `js/constantes.js` | Versões, categorias padrão e formas de pagamento |
+| `js/util.js` | Dinheiro em centavos, datas e escape de texto |
+| `js/dados.js` | Formato dos dados, migrações e validação de backup |
+| `js/calculos.js` | Totais, saldo acumulado, parcelas e contas fixas |
+| `js/armazenamento.js` | IndexedDB e pontos de restauração automáticos |
+| `js/views.js` | Telas (funções que devolvem HTML) |
+| `js/render.js` | Desenha as telas e controla a navegação |
+| `js/acoes.js` | O que acontece quando você toca em um botão |
+| `js/ui.js` | Janelas, avisos e desfazer |
+| `js/eventos.js` e `js/mapa.js` | Ligam os botões às ações permitidas |
+| `tests/` | Testes automáticos das regras de conta |
+| `.github/workflows/testes.yml` | Roda os testes a cada envio para o GitHub |
 
 ## Desenvolvimento
 
-Para editar `index.html` ou `app.js` basta abrir a pasta no VS Code e usar uma extensão de servidor local, como o Live Server. O service worker só funciona em `https` ou em `localhost`, e não abrindo o arquivo direto do disco.
+Depois de instalar as dependências (`npm install`), os comandos são:
+
+- `npm test` roda os testes das regras de conta.
+- `npm run lint` procura erros no código.
+- `npm run css` gera o `style.css`.
+
+O app não usa JavaScript dentro do HTML. Botões e campos usam atributos `data-click`, `data-change` e `data-enter`, e a lista de ações permitidas fica em `js/mapa.js`.
+
+
+Para editar `index.html` ou os arquivos da pasta `js` basta abrir a pasta no VS Code e usar uma extensão de servidor local, como o Live Server. O service worker só funciona em `https` ou em `localhost`, e não abrindo o arquivo direto do disco.
 
 Se você usar uma classe nova do Tailwind no HTML ou no JavaScript, gere o CSS de novo:
 
@@ -61,12 +78,12 @@ O comando `npm run css:watch` regenera o `style.css` sempre que você salva um a
 ## Como os dados são guardados
 
 - Todos os valores em dinheiro são números inteiros de centavos, o que evita erros de arredondamento.
-- Os dados têm um número de versão (`VERSAO_DADOS` no `app.js`). Backups e dados de versões antigas são convertidos automaticamente ao abrir.
-- Para mudar o formato no futuro, aumente `VERSAO_DADOS` e trate a mudança dentro da função `normalizar`.
+- Os dados têm um número de versão (`VERSAO_DADOS` em `js/constantes.js`). Backups e dados de versões antigas são convertidos automaticamente ao abrir.
+- Para mudar o formato no futuro, aumente `VERSAO_DADOS` em `js/constantes.js` e trate a mudança dentro de `normalizar` em `js/dados.js`.
 
 ## Publicar no GitHub Pages
 
-Envie todos os arquivos (incluindo as pastas `icons` e `src`) para a branch `main`, ligue o Pages em Settings, Pages, Deploy from a branch, e abra o endereço `github.io` do repositório.
+Envie todos os arquivos (incluindo as pastas `icons`, `src`, `js`, `tests` e `.github`) para a branch `main`, ligue o Pages em Settings, Pages, Deploy from a branch, e abra o endereço `github.io` do repositório.
 
 ## Aviso
 
