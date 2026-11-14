@@ -1,7 +1,7 @@
 // Service worker: guarda uma cópia dos arquivos do app para ele abrir sem internet.
 // Estratégia "rede primeiro": com sinal, sempre busca a versão nova; sem sinal, usa a cópia guardada.
 // Só mexa em VERSAO se quiser forçar a limpeza do cache antigo.
-const VERSAO = 'cf-4.0.0';
+const VERSAO = 'cf-4.1.0';
 const ARQUIVOS = [
   './', 'index.html', 'style.css', 'manifest.webmanifest',
   'js/main.js', 'js/constantes.js', 'js/util.js', 'js/dados.js', 'js/calculos.js', 'js/armazenamento.js',

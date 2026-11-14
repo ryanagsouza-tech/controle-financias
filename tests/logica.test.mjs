@@ -1,5 +1,6 @@
 // Testes de regressão da lógica de contas. Rodam sem navegador, com um IndexedDB simulado.
 import 'fake-indexeddb/auto';
+globalThis.BroadcastChannel = undefined;
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -13,7 +14,7 @@ globalThis.location = { protocol: 'https:', hash: '' };
 
 const { S } = await import('../js/estado.js');
 const { migrar, validarBackup } = await import('../js/dados.js');
-const { totais, acumulados, hojeChave, aplicarFixasTodos } = await import('../js/calculos.js');
+const { totais, acumulados, aplicarFixasTodos } = await import('../js/calculos.js');
 const { centavos, reais, brl } = await import('../js/util.js');
 const { gerarSerie, mesDoCalendario } = await import('../js/calculos.js');
 

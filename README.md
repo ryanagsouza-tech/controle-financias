@@ -57,8 +57,9 @@ Os dados são gravados no IndexedDB do próprio navegador. Nada é enviado para 
 
 Depois de instalar as dependências (`npm install`), os comandos são:
 
-- `npm test` roda os testes das regras de conta.
-- `npm run lint` procura erros no código.
+- `npm test` roda os testes automáticos (regras de conta, segurança, eventos, armazenamento, ações e telas).
+- `npm run lint` procura erros no código e nos testes.
+- `npm run check` roda o lint e os testes de uma vez.
 - `npm run css` gera o `style.css`.
 
 O app não usa JavaScript dentro do HTML. Botões e campos usam atributos `data-click`, `data-change` e `data-enter`, e a lista de ações permitidas fica em `js/mapa.js`.
@@ -92,3 +93,9 @@ Este projeto é uma ferramenta de organização pessoal e não é aconselhamento
 ## Licença
 
 MIT. Veja o arquivo `LICENSE`.
+
+## Mais informações
+
+- `docs/ARQUITETURA.md` explica as camadas e o fluxo de um toque.
+- `SECURITY.md` descreve como o app protege seus dados.
+- `CHANGELOG.md` lista o que mudou em cada versão.

@@ -1,14 +1,15 @@
 {
   "name": "controle-financeiro",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "private": true,
   "type": "module",
   "description": "Controle financeiro pessoal que roda no navegador e guarda os dados no aparelho.",
   "scripts": {
     "css": "tailwindcss -c tailwind.config.js -i src/input.css -o style.css",
     "css:watch": "tailwindcss -c tailwind.config.js -i src/input.css -o style.css --watch",
-    "test": "node --test tests/",
-    "lint": "eslint js"
+    "test": "node --test",
+    "lint": "eslint js tests",
+    "check": "npm run lint && npm test"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.0",

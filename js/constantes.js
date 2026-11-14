@@ -1,5 +1,5 @@
 // Constantes do app: versões, categorias padrão, formas de pagamento e ícones.
-export const VERSAO_APP = '4.0.0';
+export const VERSAO_APP = '4.1.0';
 export const MAX_BACKUP_BYTES = 5 * 1024 * 1024; // tamanho máximo de um arquivo de backup
 
 export const VERSAO_DADOS = 6; // 1 = lista de meses, 2 = valores em reais, 3 = valores em centavos, 4 = categorias novas e forma de pagamento, 5 = contas fixas, 6 = categorias enxutas, receita fixa e data do último backup
