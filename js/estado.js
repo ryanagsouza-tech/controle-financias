@@ -3,6 +3,7 @@
 export const S = {
     estado: null,                 // dados do usuário (meses, categorias, contas fixas)
     abaAtiva: 'resumo_geral',
+    ultimoMes: null,              // último mês aberto (o botão Mês da barra inferior volta para ele)
     filtros: { texto: '', cat: '', pag: '', ordem: 'recentes' },
     anosAbertos: new Set([new Date().getFullYear()]),
     storageOk: true,

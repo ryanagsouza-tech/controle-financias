@@ -1,5 +1,5 @@
 // Constantes do app: versões, categorias padrão, formas de pagamento e ícones.
-export const VERSAO_APP = '4.1.0';
+export const VERSAO_APP = '4.2.0';
 export const MAX_BACKUP_BYTES = 5 * 1024 * 1024; // tamanho máximo de um arquivo de backup
 
 export const VERSAO_DADOS = 6; // 1 = lista de meses, 2 = valores em reais, 3 = valores em centavos, 4 = categorias novas e forma de pagamento, 5 = contas fixas, 6 = categorias enxutas, receita fixa e data do último backup
@@ -51,3 +51,15 @@ export const FORMAS_COM_PARCELA = ['credito', 'boleto'];
 export const nomePag = id => (FORMAS_PAGAMENTO.find(f => f.id === id) || {}).nome || '';
 
 export const LIXEIRA = '<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+
+// Ícones desenhados em SVG, para ficarem iguais em qualquer aparelho (emoji muda de um celular para outro)
+const svg = d => `<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${d}"></path></svg>`;
+export const ICONES = {
+    inicio: svg('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'),
+    mes: svg('M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'),
+    fixas: svg('M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'),
+    mais: svg('M4 6h16M4 12h16M4 18h16'),
+    config: svg('M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'),
+    esq: svg('M15 19l-7-7 7-7'),
+    dir: svg('M9 5l7 7-7 7')
+};

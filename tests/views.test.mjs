@@ -79,7 +79,7 @@ test('lista: filtros por texto, categoria e forma de pagamento', () => {
 test('lista: estorno aparece em verde e série mostra as parcelas', () => {
     const m = mesDoCalendario(A, M);
     m.lancamentos.push(lanc('a', 'Lazer', -2000, { descricao: 'Estorno' }));
-    assert.match(views.renderLista(m), /text-emerald-600">-?R\$/);
+    assert.match(views.renderLista(m), /text-emerald-700">\+R\$/);
 });
 
 test('aviso de backup: discreto e adiável', () => {

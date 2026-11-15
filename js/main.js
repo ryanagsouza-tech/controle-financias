@@ -5,7 +5,7 @@ import { aplicarFixasTodos, garantirMesAtual } from './calculos.js';
 import { carregar, lerDB, obterCanal, persistir, salvarSnapshot } from './armazenamento.js';
 import { aplicarTema } from './tema.js';
 import { fechar, fecharDialogo, janelaAberta, mostrarToast, prenderFoco } from './ui.js';
-import { aplicarLayout, renderizar, toggleMobileSidebar } from './render.js';
+import { renderizar, toggleMobileSidebar } from './render.js';
 import { abrirRapido } from './acoes.js';
 import { instalar } from './eventos.js';
 import { ACOES } from './mapa.js';
@@ -49,7 +49,6 @@ function configurarTeclado() {
 
 async function iniciar() {
     S.renderizar = renderizar;
-    aplicarLayout();
     instalar(document, ACOES);
     configurarTeclado();
     configurarGestos();

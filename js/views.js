@@ -1,5 +1,5 @@
 // Telas: funções que devolvem texto HTML. Nenhuma delas mexe no DOM nem usa JavaScript dentro do HTML.
-import { ABREV_MESES, CATEGORIAS_SUGERIDAS, FORMAS_PAGAMENTO, LIXEIRA, VERSAO_APP, nomePag } from './constantes.js';
+import { ABREV_MESES, CATEGORIAS_SUGERIDAS, FORMAS_PAGAMENTO, ICONES, LIXEIRA, VERSAO_APP, nomePag } from './constantes.js';
 import { brl, curto, dataBR, esc, ev, hojeChave, hojeISO, mesAtualISO, num, reais, semAcento } from './util.js';
 import { S } from './estado.js';
 import { acumulados, catDoItem, dataPadrao, gastosPorCategoria, limitesMes, mesesCronologicos, rotuloTri, totais, triDe } from './calculos.js';
@@ -7,9 +7,9 @@ import { lerTema } from './tema.js';
 
 export function card(rotulo, valor, cor, sub, fundo) {
     return `<div class="${fundo || 'bg-white border-slate-200'} p-4 rounded-2xl shadow-sm border">
-        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">${rotulo}</span>
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">${rotulo}</span>
         <div class="text-lg font-bold mt-1 ${cor}">${valor}</div>
-        ${sub ? `<p class="text-[11px] text-slate-400 mt-0.5">${sub}</p>` : ''}
+        ${sub ? `<p class="text-xs text-slate-500 mt-0.5">${sub}</p>` : ''}
     </div>`;
 }
 
@@ -35,13 +35,13 @@ export function graficoMensal(acc) {
 }
 
 export function barrasCategorias(lista, total) {
-    if (!lista.length) return '<p class="text-sm text-slate-400 italic">Nenhum gasto lançado ainda.</p>';
+    if (!lista.length) return '<p class="text-sm text-slate-500 italic">Nenhum gasto lançado ainda.</p>';
     return `<div class="space-y-3">${lista.map(x => {
         const pct = total > 0 ? x.total / total * 100 : 0;
         return `<div>
             <div class="flex justify-between text-xs font-semibold mb-1">
                 <span class="text-slate-700">${esc(curto(x.cat.nome))}</span>
-                <span class="text-slate-900 font-bold">${brl(x.total)} <span class="text-slate-400 font-normal">(${pct.toFixed(1)}%)</span></span>
+                <span class="text-slate-900 font-bold">${brl(x.total)} <span class="text-slate-500 font-normal">(${pct.toFixed(1)}%)</span></span>
             </div>
             <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden"><div class="h-2.5 rounded-full" data-larg="${Math.min(pct, 100)}" data-bg="${x.cat.cor}"></div></div>
         </div>`;
@@ -68,9 +68,9 @@ export function boasVindas() {
                 <li>Registre os gastos conforme acontecem e use o botão Backup de vez em quando.</li>
             </ol>
             <div class="flex flex-wrap gap-2">
-                <button ${ev('click', 'trocarAba', 'config')} class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow">Saldo e categorias</button>
-                ${atual ? `<button ${ev('click', 'trocarAba', atual.id)} class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow">Abrir ${esc(atual.nome)}</button>` : ''}
-                <button ${ev('click', 'dispensarBoasVindas')} class="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-600 font-bold text-xs rounded-xl border border-slate-300">Não mostrar mais</button>
+                <button ${ev('click', 'trocarAba', 'config')} class="btn btn-primario">Saldo e categorias</button>
+                ${atual ? `<button ${ev('click', 'trocarAba', atual.id)} class="btn btn-primario">Abrir ${esc(atual.nome)}</button>` : ''}
+                <button ${ev('click', 'dispensarBoasVindas')} class="btn btn-secundario">Não mostrar mais</button>
             </div>
         </div>`;
 }
@@ -94,15 +94,15 @@ export function viewGeralCorpo() {
             <p class="text-xs text-slate-500">Receitas, gastos e investimentos somam todos os meses cadastrados. Saldo e patrimônio contam só até o mês atual.</p>
         </div>
         <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            ${card('Receitas', brl(R), 'text-emerald-600')}
+            ${card('Receitas', brl(R), 'text-emerald-700')}
             ${card('Gastos', brl(G), 'text-rose-600')}
-            ${card('Investido', brl(I), 'text-cyan-600')}
+            ${card('Investido', brl(I), 'text-cyan-700')}
             ${card('Saldo na conta', brl(conta), conta >= 0 ? 'text-emerald-900' : 'text-rose-600', 'até o mês atual' + (si !== 0 ? ', com saldo inicial de ' + brl(si) : ''), 'bg-emerald-50 border-emerald-200')}
             ${card('Patrimônio', brl(conta + investido), 'text-sky-900', 'conta + investimentos, até o mês atual', 'bg-sky-50 border-sky-200')}
         </div>
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <h3 class="font-bold text-slate-900">Evolução mensal</h3>
-            <div class="flex flex-wrap gap-4 text-[11px] text-slate-500">
+            <div class="flex flex-wrap gap-4 text-xs text-slate-500">
                 <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span>Receitas</span>
                 <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-rose-500"></span>Gastos</span>
                 <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-cyan-500"></span>Investido</span>
@@ -115,9 +115,9 @@ export function viewGeralCorpo() {
         </div>
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <h3 class="font-bold text-slate-900">Resumo mês a mês</h3>
-            <div class="overflow-x-auto">
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase"><tr>
+                    <thead class="bg-slate-50 text-xs font-bold text-slate-500 uppercase"><tr>
                         <th class="p-3">Mês</th><th class="p-3 text-right">Receitas</th><th class="p-3 text-right">Gastos</th>
                         <th class="p-3 text-right">Investido</th><th class="p-3 text-right">Sobra</th><th class="p-3 text-right">Saldo acumulado</th><th class="p-3"></th>
                     </tr></thead>
@@ -125,15 +125,31 @@ export function viewGeralCorpo() {
                         ${S.estado.meses.map(m => { const t = acc[m.id]; return `
                         <tr class="hover:bg-slate-50">
                             <td class="p-3 font-semibold text-slate-900">${esc(m.nome)}</td>
-                            <td class="p-3 text-right text-emerald-600">${brl(t.receitas)}</td>
+                            <td class="p-3 text-right text-emerald-700">${brl(t.receitas)}</td>
                             <td class="p-3 text-right text-rose-600">${brl(t.gastos)}</td>
-                            <td class="p-3 text-right text-cyan-600">${brl(t.invest)}</td>
-                            <td class="p-3 text-right font-semibold ${t.sobra >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${brl(t.sobra)}</td>
+                            <td class="p-3 text-right text-cyan-700">${brl(t.invest)}</td>
+                            <td class="p-3 text-right font-semibold ${t.sobra >= 0 ? 'text-emerald-700' : 'text-rose-600'}">${brl(t.sobra)}</td>
                             <td class="p-3 text-right font-bold ${t.conta >= 0 ? 'text-slate-900' : 'text-rose-600'}">${brl(t.conta)}</td>
-                            <td class="p-3 text-center"><button ${ev('click', 'trocarAba', m.id)} class="px-3 py-1 bg-sky-100 hover:bg-sky-200 text-sky-800 text-xs font-bold rounded-lg">Abrir</button></td>
+                            <td class="p-3 text-center"><button ${ev('click', 'trocarAba', m.id)} class="btn btn-secundario btn-sm">Abrir</button></td>
                         </tr>`; }).join('')}
                     </tbody>
                 </table>
+            </div>
+            <div class="md:hidden space-y-3">
+                ${S.estado.meses.map(m => { const t = acc[m.id]; return `
+                <div class="border border-slate-200 rounded-xl p-4 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-900">${esc(m.nome)}</span>
+                        <button ${ev('click', 'trocarAba', m.id)} class="btn btn-secundario btn-sm">Abrir</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div><p class="text-xs text-slate-500">Receitas</p><p class="text-sm font-bold text-emerald-700">${brl(t.receitas)}</p></div>
+                        <div><p class="text-xs text-slate-500">Gastos</p><p class="text-sm font-bold text-rose-600">${brl(t.gastos)}</p></div>
+                        <div><p class="text-xs text-slate-500">Investido</p><p class="text-sm font-bold text-cyan-700">${brl(t.invest)}</p></div>
+                    </div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Sobra do mês</span><span class="font-bold ${t.sobra >= 0 ? 'text-emerald-700' : 'text-rose-600'}">${brl(t.sobra)}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-500">Saldo acumulado</span><span class="font-bold ${t.conta >= 0 ? 'text-slate-900' : 'text-rose-600'}">${brl(t.conta)}</span></div>
+                </div>`; }).join('')}
             </div>
         </div>`;
 }
@@ -151,9 +167,9 @@ export function viewTrimestre(k) {
                 <p class="text-xs text-slate-500">${ms.length} ${ms.length === 1 ? 'mês' : 'meses'} neste trimestre.</p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                ${card('Receitas', brl(R), 'text-emerald-600', '', 'bg-slate-50 border-slate-100')}
+                ${card('Receitas', brl(R), 'text-emerald-700', '', 'bg-slate-50 border-slate-100')}
                 ${card('Gastos', brl(G), 'text-rose-600', '', 'bg-slate-50 border-slate-100')}
-                ${card('Investido', brl(I), 'text-cyan-600', '', 'bg-slate-50 border-slate-100')}
+                ${card('Investido', brl(I), 'text-cyan-700', '', 'bg-slate-50 border-slate-100')}
                 ${card('Sobra do trimestre', brl(sobra), sobra >= 0 ? 'text-emerald-900' : 'text-rose-600', '', 'bg-emerald-50 border-emerald-100')}
             </div>
         </div>
@@ -161,11 +177,11 @@ export function viewTrimestre(k) {
             ${ms.map(m => { const t = totais(m); return `
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <h3 class="font-bold text-base text-slate-900 border-b pb-2">${esc(m.nome)}</h3>
-                <div class="flex justify-between text-sm"><span class="text-slate-500">Receitas:</span><span class="font-semibold text-emerald-600">${brl(t.receitas)}</span></div>
+                <div class="flex justify-between text-sm"><span class="text-slate-500">Receitas:</span><span class="font-semibold text-emerald-700">${brl(t.receitas)}</span></div>
                 <div class="flex justify-between text-sm"><span class="text-slate-500">Gastos:</span><span class="font-semibold text-rose-600">${brl(t.gastos)}</span></div>
-                <div class="flex justify-between text-sm"><span class="text-slate-500">Investido:</span><span class="font-semibold text-cyan-600">${brl(t.invest)}</span></div>
-                <div class="flex justify-between text-sm border-t pt-2 font-bold"><span class="text-slate-500">Sobra:</span><span class="${t.sobra >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${brl(t.sobra)}</span></div>
-                <button ${ev('click', 'trocarAba', m.id)} class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow transition">Abrir mês</button>
+                <div class="flex justify-between text-sm"><span class="text-slate-500">Investido:</span><span class="font-semibold text-cyan-700">${brl(t.invest)}</span></div>
+                <div class="flex justify-between text-sm border-t pt-2 font-bold"><span class="text-slate-500">Sobra:</span><span class="${t.sobra >= 0 ? 'text-emerald-700' : 'text-rose-600'}">${brl(t.sobra)}</span></div>
+                <button ${ev('click', 'trocarAba', m.id)} class="btn btn-primario btn-sm w-full">Abrir mês</button>
             </div>`; }).join('')}
         </div>`;
 }
@@ -182,8 +198,8 @@ export function avisoBackup() {
     return `<div class="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-xs flex flex-wrap items-center justify-between gap-2">
         <span>${ult ? 'Seu último backup foi há ' + dias + ' dias.' : 'Você ainda não guardou uma cópia dos seus dados fora do aparelho.'} Se perder o celular ou limpar os dados do navegador, eles somem.</span>
         <span class="flex gap-2 shrink-0">
-            <button ${ev('click', 'adiarBackup')} class="bg-white hover:bg-amber-100 text-amber-800 font-bold px-3 py-2 rounded-lg border border-amber-300">Depois</button>
-            <button ${ev('click', 'exportarDados')} class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-2 rounded-lg">Fazer backup</button>
+            <button ${ev('click', 'adiarBackup')} class="btn btn-secundario btn-sm">Depois</button>
+            <button ${ev('click', 'exportarDados')} class="btn btn-primario btn-sm">Fazer backup</button>
         </span>
     </div>`;
 }
@@ -196,12 +212,12 @@ export function resumoPagamento(mes) {
     return `<div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <div>
                 <h3 class="font-bold text-slate-900">Por forma de pagamento</h3>
-                <p class="text-xs text-slate-400">O total do crédito é o que vai para a fatura do cartão com os lançamentos deste mês.</p>
+                <p class="text-xs text-slate-500">O total do crédito é o que vai para a fatura do cartão com os lançamentos deste mês.</p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                 ${chaves.map(k => `
                 <div class="${k === 'credito' ? 'bg-sky-50 border-sky-200' : 'bg-slate-50 border-slate-100'} border rounded-xl p-3">
-                    <p class="text-[11px] font-bold text-slate-500 uppercase">${k === '_' ? 'Não informado' : nomePag(k)}</p>
+                    <p class="text-xs font-bold text-slate-500 uppercase">${k === '_' ? 'Não informado' : nomePag(k)}</p>
                     <p class="text-sm font-bold text-slate-900 mt-0.5">${brl(mapa[k])}</p>
                 </div>`).join('')}
             </div>
@@ -211,7 +227,7 @@ export function resumoPagamento(mes) {
 /* ---- Contas fixas ---- */
 export function viewFixas() {
     const campo = 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-medium';
-    const rot = 'block text-[10px] font-bold text-slate-500 uppercase mb-1';
+    const rot = 'block text-xs font-bold text-slate-500 uppercase mb-1';
     const opcCat = sel => S.estado.categorias.map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.nome)}</option>`).join('');
     const opcPag = sel => '<option value="">Não informar</option>' + FORMAS_PAGAMENTO.map(f => `<option value="${f.id}" ${f.id === sel ? 'selected' : ''}>${f.nome}</option>`).join('');
     const soma = t => S.estado.contasFixas.filter(f => f.tipo === t).reduce((a, f) => a + num(f.valor), 0);
@@ -235,7 +251,8 @@ export function viewFixas() {
                 <div id="boxFixaPag"><label for="fixaPag" class="${rot}">Pagamento</label><select id="fixaPag" class="${campo}">${opcPag('')}</select></div>
                 <div><label for="fixaInicio" class="${rot}">A partir de</label><input type="month" id="fixaInicio" value="${mesAtualISO()}" class="${campo}"></div>
                 <div><label for="fixaFim" class="${rot}">Até (opcional)</label><input type="month" id="fixaFim" class="${campo}"></div>
-                <div class="col-span-2 flex items-end"><button ${ev('click', 'adicionarFixa')} class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm rounded-xl shadow">+ Adicionar conta fixa</button></div>
+                <p id="erroFixa" role="alert" class="hidden col-span-2 md:col-span-4 text-sm font-semibold text-rose-700"></p>
+                <div class="col-span-2 flex items-end"><button ${ev('click', 'adicionarFixa')} class="btn btn-primario w-full">+ Adicionar conta fixa</button></div>
             </div>
         </div>
 
@@ -248,15 +265,15 @@ export function viewFixas() {
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                     ${f.tipo === 'receita'
-                        ? `<div class="col-span-2 md:col-span-2 flex items-end"><span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1.5 rounded-lg">Receita fixa</span></div>`
+                        ? `<div class="col-span-2 md:col-span-2 flex items-end"><span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1.5 rounded-lg">Receita fixa</span></div>`
                         : `<div class="col-span-2 md:col-span-1"><label class="${rot}">Categoria</label><select ${ev('change', 'editarFixa', f.id, 'categoriaId')} class="${campo}">${opcCat(f.categoriaId)}</select></div>
                            <div><label class="${rot}">Pagamento</label><select ${ev('change', 'editarFixa', f.id, 'pagamento')} class="${campo}">${opcPag(f.pagamento)}</select></div>`}
                     <div><label class="${rot}">Dia</label><input type="number" min="1" max="31" inputmode="numeric" value="${f.dia}" ${ev('change', 'editarFixa', f.id, 'dia')} class="${campo}"></div>
                     <div><label class="${rot}">A partir de</label><input type="month" value="${f.inicio}" ${ev('change', 'editarFixa', f.id, 'inicio')} class="${campo}"></div>
                     <div><label class="${rot}">Até</label><input type="month" value="${f.fim}" ${ev('change', 'editarFixa', f.id, 'fim')} class="${campo}"></div>
                 </div>
-                <button ${ev('click', 'removerFixa', f.id)} aria-label="Excluir conta fixa" class="inline-flex items-center gap-1.5 text-rose-500 hover:text-rose-700 font-bold text-xs bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-lg">${LIXEIRA} Excluir conta fixa</button>
-            </div>`).join('') : '<p class="text-sm text-slate-400 italic">Nenhuma conta fixa cadastrada ainda.</p>'}
+                <button ${ev('click', 'removerFixa', f.id)} aria-label="Excluir conta fixa" class="btn btn-perigo-suave btn-sm">${LIXEIRA} Excluir conta fixa</button>
+            </div>`).join('') : '<p class="text-sm text-slate-500 italic">Nenhuma conta fixa cadastrada ainda.</p>'}
         </div>`;
 }
 
@@ -272,8 +289,8 @@ export function blocoPontos() {
                 <h3 class="font-bold text-slate-900">Pontos de restauração automáticos</h3>
                 <p class="text-xs text-slate-500">O app guarda sozinho uma cópia por dia (os últimos 7 dias) e uma antes de cada atualização. Use para voltar de um erro, sem baixar nada. As cópias ficam neste aparelho, junto com os dados.</p>
             </div>
-            <div id="listaPontos" class="space-y-2"><p class="text-sm text-slate-400">Carregando...</p></div>
-            <p id="statusArmazenamento" class="text-[11px] text-slate-400"></p>
+            <div id="listaPontos" class="space-y-2"><p class="text-sm text-slate-500">Carregando...</p></div>
+            <p id="statusArmazenamento" class="text-xs text-slate-500"></p>
         </div>`;
 }
 
@@ -286,7 +303,7 @@ export function blocoAparencia() {
             <select id="tema" ${ev('change', 'definirTema')} class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-medium">
                 ${opt('auto', 'Seguir o aparelho')}${opt('claro', 'Claro')}${opt('escuro', 'Escuro')}
             </select>
-            <p class="text-[11px] text-slate-400">Controle Financeiro, versão ${VERSAO_APP}</p>
+            <p class="text-xs text-slate-500">Controle Financeiro, versão ${VERSAO_APP}</p>
         </div>`;
 }
 
@@ -300,36 +317,36 @@ export function viewConfigCorpo() {
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-2">
             <label for="saldoInicial" class="block text-sm font-bold text-slate-900">Saldo inicial da conta (R$)</label>
             <input type="number" step="0.01" inputmode="decimal" id="saldoInicial" value="${S.estado.saldoInicial ? reais(S.estado.saldoInicial) : ''}" placeholder="0.00" ${ev('change', 'definirSaldoInicial')} class="${campo} w-48 text-right">
-            <p class="text-[11px] text-slate-400">Entra no saldo acumulado a partir do primeiro mês da lista.</p>
+            <p class="text-xs text-slate-500">Entra no saldo acumulado a partir do primeiro mês da lista.</p>
         </div>
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <h3 class="font-bold text-slate-900">Categorias</h3>
                 <div class="flex items-center gap-2">
                     ${CATEGORIAS_SUGERIDAS.some(x => !S.estado.categorias.some(c => c.id === x.id)) ? `<select ${ev('change', 'adicionarSugerida')} aria-label="Adicionar categoria sugerida" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold"><option value="">+ Sugeridas</option>${CATEGORIAS_SUGERIDAS.filter(x => !S.estado.categorias.some(c => c.id === x.id)).map(x => `<option value="${x.id}">${esc(curto(x.nome))}</option>`).join('')}</select>` : ''}
-                    <button ${ev('click', 'adicionarCategoria')} class="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-lg shadow">+ Nova categoria</button>
+                    <button ${ev('click', 'adicionarCategoria')} class="btn btn-primario btn-sm">+ Nova categoria</button>
                 </div>
             </div>
             <div class="space-y-3">
                 ${S.estado.categorias.map(c => `
                 <div class="border border-slate-200 rounded-xl p-3 space-y-2">
                     <div class="flex items-center gap-2">
-                        <input type="color" value="${c.cor}" aria-label="Cor" ${ev('change', 'editarCategoria', c.id, 'cor')} class="w-10 h-10 rounded-lg shrink-0 cursor-pointer">
+                        <input type="color" value="${c.cor}" aria-label="Cor" ${ev('change', 'editarCategoria', c.id, 'cor')} class="w-11 h-11 rounded-lg shrink-0 cursor-pointer">
                         <input type="text" value="${esc(c.nome)}" aria-label="Nome da categoria" ${ev('change', 'editarCategoria', c.id, 'nome')} class="${campo} flex-1 min-w-0">
                     </div>
                     <div class="flex flex-wrap items-end gap-2">
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tipo</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
                             <select ${ev('change', 'editarCategoria', c.id, 'tipo')} class="${campo}">
                                 <option value="gasto" ${c.tipo === 'gasto' ? 'selected' : ''}>Gasto</option>
                                 <option value="investimento" ${c.tipo === 'investimento' ? 'selected' : ''}>Investimento</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Limite mensal (R$)</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Limite mensal (R$)</label>
                             <input type="number" step="0.01" inputmode="decimal" value="${c.orcamento ? reais(c.orcamento) : ''}" placeholder="0" ${c.tipo === 'investimento' ? 'disabled' : ''} ${ev('change', 'editarCategoria', c.id, 'orcamento')} class="${campo} w-32 text-right disabled:opacity-40">
                         </div>
-                        <button ${ev('click', 'removerCategoria', c.id)} aria-label="Excluir categoria" class="ml-auto inline-flex items-center gap-1.5 text-rose-500 hover:text-rose-700 font-bold text-xs bg-rose-50 hover:bg-rose-100 px-3 py-2.5 rounded-lg">${LIXEIRA} Excluir</button>
+                        <button ${ev('click', 'removerCategoria', c.id)} aria-label="Excluir categoria" class="btn btn-perigo-suave btn-sm ml-auto">${LIXEIRA} Excluir</button>
                     </div>
                 </div>`).join('')}
             </div>
@@ -342,6 +359,10 @@ export function viewMes(mes) {
     const lim = limitesMes(mes);
     const campo = 'bg-slate-50 border border-slate-300 rounded-xl p-2 text-sm font-medium';
 
+    const listaMeses = mesesCronologicos();
+    const posicao = listaMeses.findIndex(x => x.id === mes.id);
+    const ant = posicao > 0 ? listaMeses[posicao - 1] : null;
+    const prox = posicao >= 0 && posicao < listaMeses.length - 1 ? listaMeses[posicao + 1] : null;
     const chavePrev = mes.ano && mes.mes ? mes.ano * 12 + mes.mes - 1 : null;
     const prev = chavePrev ? S.estado.meses.find(m => m.ano && m.mes && m.ano * 12 + m.mes === chavePrev) : null;
     const orc = S.estado.categorias.filter(c => c.tipo === 'gasto').map(c => {
@@ -360,7 +381,7 @@ export function viewMes(mes) {
             else if (antes > 0) {
                 const d = (total - antes) / antes * 100;
                 comp = (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + Math.abs(d).toFixed(0) + '% vs mês anterior';
-                corComp = d > 0 ? '#e11d48' : d < 0 ? '#059669' : '#64748b';
+                corComp = d > 0 ? '#e11d48' : d < 0 ? '#047857' : '#64748b';
             }
         }
         return { c, total, lm, pct, cor, status, corStatus, comp, corComp };
@@ -370,16 +391,21 @@ export function viewMes(mes) {
     return `
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
             <div>
-                <span class="text-xs font-bold text-sky-600 uppercase tracking-wider">Mês selecionado</span>
-                <h2 class="text-2xl font-bold text-slate-900">${esc(mes.nome)}</h2>
-                <div class="flex flex-wrap items-center gap-2 mt-2">
-                    <button ${ev('click', 'excluirMes', mes.id)} aria-label="Excluir mês" class="inline-flex items-center gap-1.5 text-rose-500 hover:text-rose-700 font-bold text-xs bg-rose-50 hover:bg-rose-100 px-2.5 py-2 rounded-lg transition">${LIXEIRA} Excluir mês</button>
+                <div class="flex items-center justify-between gap-2">
+                <button ${ev('click', 'mesAnterior')} aria-label="Mês anterior" class="btn-icone btn-secundario" ${ant ? '' : 'disabled'}>${ICONES.esq}</button>
+                <div class="text-center min-w-0 flex-1">
+                    <h2 class="text-xl font-bold text-slate-900 truncate">${esc(mes.nome)}</h2>
+                    <select aria-label="Ir para outro mês" ${ev('change', 'trocarAba')} class="${campo} mt-1 max-w-full">${listaMeses.map(x => `<option value="${x.id}" ${x.id === mes.id ? 'selected' : ''}>${esc(x.nome)}</option>`).join('')}</select>
                 </div>
+                <button ${ev('click', 'mesSeguinte')} aria-label="Próximo mês" class="btn-icone btn-secundario" ${prox ? '' : 'disabled'}>${ICONES.dir}</button>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button ${ev('click', 'excluirMes', mes.id)} aria-label="Excluir mês" class="btn btn-perigo-suave btn-sm">${LIXEIRA} Excluir mês</button>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-                ${card('Receitas', brl(t.receitas), 'text-emerald-600', '', 'bg-slate-50 border-slate-100')}
+                ${card('Receitas', brl(t.receitas), 'text-emerald-700', '', 'bg-slate-50 border-slate-100')}
                 ${card('Gastos', brl(t.gastos), 'text-rose-600', '', 'bg-slate-50 border-slate-100')}
-                ${card('Investido', brl(t.invest), 'text-cyan-900', '', 'bg-cyan-50 border-cyan-200')}
+                ${card('Investido', brl(t.invest), 'text-cyan-700', '', 'bg-cyan-50 border-cyan-200')}
                 ${card('Sobra do mês', brl(t.sobra), t.sobra >= 0 ? 'text-emerald-900' : 'text-rose-600', 'receitas - gastos - investido', 'bg-emerald-50 border-emerald-200')}
                 ${card('Saldo na conta', brl(t.conta), t.conta >= 0 ? 'text-slate-900' : 'text-rose-600', 'acumulado até aqui', 'bg-slate-50 border-slate-200')}
                 ${card('Patrimônio', brl(t.patrimonio), 'text-sky-900', 'conta + investido', 'bg-sky-50 border-sky-200')}
@@ -392,8 +418,9 @@ export function viewMes(mes) {
             <div class="flex items-center gap-2">
                 <input type="text" value="${esc(r.descricao)}" aria-label="Descrição da receita" ${ev('change', 'editarReceita', mes.id, r.id, 'descricao')} class="${campo} flex-1 min-w-0">
                 <input type="number" step="0.01" inputmode="decimal" value="${reais(r.valor)}" aria-label="Valor da receita" ${ev('change', 'editarReceita', mes.id, r.id, 'valor')} class="${campo} w-28 text-right">
-                <button ${ev('click', 'removerReceita', mes.id, r.id)} aria-label="Remover receita" class="text-rose-500 hover:text-rose-700 bg-rose-50 px-2.5 py-2.5 rounded-lg">${LIXEIRA}</button>
-            </div>`).join('') : '<p class="text-sm text-slate-400 italic">Nenhuma receita neste mês ainda.</p>'}
+                <button ${ev('click', 'removerReceita', mes.id, r.id)} aria-label="Remover receita" class="btn-icone btn-perigo-suave">${LIXEIRA}</button>
+            </div>`).join('') : '<p class="text-sm text-slate-500 italic">Nenhuma receita neste mês ainda.</p>'}
+            <p id="erroRec_${mes.id}" role="alert" class="hidden text-sm font-semibold text-rose-700"></p>
             <div class="flex flex-wrap items-end gap-2 pt-2 border-t border-slate-100">
                 <div class="flex-1 min-w-[8rem]">
                     <label for="recDesc_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Nova receita</label>
@@ -403,14 +430,14 @@ export function viewMes(mes) {
                     <label for="recVal_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Valor (R$)</label>
                     <input type="number" step="0.01" inputmode="decimal" id="recVal_${mes.id}" ${ev('enter', 'adicionarReceita', mes.id)} placeholder="0.00" class="${campo} w-full text-right">
                 </div>
-                <button ${ev('click', 'adicionarReceita', mes.id)} class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow">+ Adicionar</button>
+                <button ${ev('click', 'adicionarReceita', mes.id)} class="btn btn-primario">+ Adicionar</button>
             </div>
         </div>
 
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
             <div>
                 <h3 class="font-bold text-slate-900">Gastos e orçamento por categoria</h3>
-                <p class="text-xs text-slate-400">Com limite definido, a barra mostra o quanto do limite já foi usado. Sem limite, mostra a parte de cada categoria nos gastos do mês.</p>
+                <p class="text-xs text-slate-500">Com limite definido, a barra mostra o quanto do limite já foi usado. Sem limite, mostra a parte de cada categoria nos gastos do mês.</p>
             </div>
             ${estourados ? `<div class="bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold p-3 rounded-xl">${estourados} ${estourados === 1 ? 'categoria passou' : 'categorias passaram'} do limite neste mês.</div>` : ''}
             <div class="space-y-3">
@@ -418,41 +445,50 @@ export function viewMes(mes) {
                 <div>
                     <div class="flex justify-between text-xs font-semibold mb-1 gap-2">
                         <span class="text-slate-700">${esc(curto(x.c.nome))}</span>
-                        <span class="text-slate-900 font-bold text-right">${brl(x.total)} <span class="text-slate-400 font-normal">${x.lm > 0 ? 'de ' + brl(x.lm) : '(' + x.pct.toFixed(1) + '%)'}</span></span>
+                        <span class="text-slate-900 font-bold text-right">${brl(x.total)} <span class="text-slate-500 font-normal">${x.lm > 0 ? 'de ' + brl(x.lm) : '(' + x.pct.toFixed(1) + '%)'}</span></span>
                     </div>
                     <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden"><div class="h-2.5 rounded-full" data-larg="${Math.min(x.pct, 100)}" data-bg="${x.cor}"></div></div>
-                    ${x.status ? `<p class="text-[11px] mt-0.5 font-semibold" data-cor="${x.corStatus}">${x.status}</p>` : ''}
-                    ${x.comp ? `<p class="text-[11px] mt-0.5" data-cor="${x.corComp}">${x.comp}</p>` : ''}
+                    ${x.status ? `<p class="text-xs mt-0.5 font-semibold" data-cor="${x.corStatus}">${x.status}</p>` : ''}
+                    ${x.comp ? `<p class="text-xs mt-0.5" data-cor="${x.corComp}">${x.comp}</p>` : ''}
                 </div>`).join('')}
             </div>
         </div>
         ${resumoPagamento(mes)}
 
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-            <h3 class="font-bold text-slate-900">Adicionar gasto ou investimento</h3>
-            <p id="dicaLancamento" class="text-[11px] text-slate-500">Para um estorno ou reembolso, use valor negativo.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
-                <div>
-                    <label for="novaData_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Data</label>
-                    <input type="date" id="novaData_${mes.id}" value="${dataPadrao(mes)}" ${lim ? `min="${lim.ini}" max="${lim.fim}"` : ''} class="${campo} w-full">
-                </div>
-                <div>
-                    <label for="novoCat_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Categoria</label>
-                    <select id="novoCat_${mes.id}" class="${campo} w-full">${S.estado.categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('')}</select>
-                </div>
-                <div>
-                    <label for="novoDesc_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Descrição</label>
-                    <input type="text" id="novoDesc_${mes.id}" placeholder="Ex: Mercado, Tesouro" aria-describedby="dicaLancamento" ${ev('change', 'sugerirCategoria', mes.id)} ${ev('enter', 'focarCampo', 'novoValor_' + mes.id)} class="${campo} w-full">
-                </div>
-                <div>
-                    <label for="novoValor_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Valor (R$)</label>
-                    <input type="number" step="0.01" inputmode="decimal" id="novoValor_${mes.id}" ${ev('enter', 'adicionarLanc', mes.id)} placeholder="0.00" class="${campo} w-full">
-                </div>
-                <div class="flex items-end">
-                    <button ${ev('click', 'adicionarLanc', mes.id)} class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm rounded-xl shadow">+ Inserir</button>
-                </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="font-bold text-slate-900">Novo lançamento</h3>
+            <div>
+                <label for="novoValor_${mes.id}" class="block text-sm font-bold text-slate-600 mb-1">Valor (R$)</label>
+                <input type="number" step="0.01" inputmode="decimal" id="novoValor_${mes.id}" ${ev('enter', 'focarCampo', 'novoDesc_' + mes.id)} placeholder="0,00" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 h-16 text-3xl font-bold">
             </div>
-            ${pagamentoCampos(mes, lim)}
+            <div>
+                <label for="novoDesc_${mes.id}" class="block text-sm font-bold text-slate-600 mb-1">Descrição</label>
+                <input type="text" id="novoDesc_${mes.id}" placeholder="Ex: Mercado, Tesouro" ${ev('change', 'sugerirCategoria', mes.id)} ${ev('enter', 'aposDescLanc', mes.id)} class="${campo} w-full">
+            </div>
+            <div>
+                <span id="rotCat_${mes.id}" class="block text-sm font-bold text-slate-600 mb-1">Categoria</span>
+                ${chipsRadio('novoCat_' + mes.id, S.estado.categorias.map(c => ({ valor: c.id, rotulo: esc(curto(c.nome)) })), (S.estado.categorias.find(c => c.tipo === 'gasto') || S.estado.categorias[0] || {}).id)}
+            </div>
+            <div>
+                <span id="rotPag_${mes.id}" class="block text-sm font-bold text-slate-600 mb-1">Pagamento</span>
+                ${chipsRadio('novaPag_' + mes.id, [{ valor: '', rotulo: 'Não informar' }, ...FORMAS_PAGAMENTO.map(f => ({ valor: f.id, rotulo: f.nome }))], '', ev('change', 'mostrarParcelas', mes.id))}
+            </div>
+            ${lim ? `
+            <div id="boxParcelas_${mes.id}" class="hidden">
+                <label for="novaParc_${mes.id}" class="block text-sm font-bold text-slate-600 mb-1">Parcelas (1 = à vista)</label>
+                <input type="number" min="1" max="48" inputmode="numeric" id="novaParc_${mes.id}" value="1" class="${campo} w-32">
+                <p id="dicaParcelas_${mes.id}" class="text-xs text-slate-500 mt-1">O valor é o total da compra, dividido em parcelas mensais (cartão ou carnê de boletos). Os próximos meses são criados se ainda não existirem.</p>
+            </div>` : ''}
+            <div>
+                <label for="novaData_${mes.id}" class="block text-sm font-bold text-slate-600 mb-1">Data</label>
+                <input type="date" id="novaData_${mes.id}" value="${dataPadrao(mes)}" ${lim ? `min="${lim.ini}" max="${lim.fim}"` : ''} class="${campo} w-full sm:w-auto">
+            </div>
+            <label class="flex items-center gap-3 text-sm font-semibold text-slate-700 min-h-[44px]">
+                <input type="checkbox" id="novoEstorno_${mes.id}" class="w-6 h-6">
+                Estorno ou reembolso (reduz o gasto)
+            </label>
+            <p id="erroLanc_${mes.id}" role="alert" class="hidden text-sm font-semibold text-rose-700"></p>
+            <button id="btnInserir_${mes.id}" ${ev('click', 'adicionarLanc', mes.id)} class="btn btn-primario w-full">Inserir</button>
         </div>
 
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
@@ -478,29 +514,13 @@ export function viewMes(mes) {
         </div>`;
 }
 
-export function pagamentoCampos(mes, lim) {
-    const campo = 'bg-slate-50 border border-slate-300 rounded-xl p-2 text-sm font-medium';
-    const rotulo = 'block text-xs font-bold text-slate-500 mb-1';
-    return `
-            <div class="flex flex-wrap items-end gap-3 pt-3 border-t border-slate-100">
-                <div>
-                    <label for="novaPag_${mes.id}" class="${rotulo}">Forma de pagamento</label>
-                    <select id="novaPag_${mes.id}" ${ev('change', 'mostrarParcelas', mes.id)} class="${campo}">
-                        <option value="">Não informar</option>
-                        ${FORMAS_PAGAMENTO.map(f => `<option value="${f.id}">${f.nome}</option>`).join('')}
-                    </select>
-                </div>
-                ${lim ? `
-                <div id="boxParcelas_${mes.id}" class="hidden">
-                    <label for="novaParc_${mes.id}" class="${rotulo}">Parcelas (1 = à vista)</label>
-                    <input type="number" min="1" max="48" inputmode="numeric" id="novaParc_${mes.id}" value="1" class="${campo} w-28">
-                </div>
-                <p id="dicaParcelas_${mes.id}" class="hidden text-[11px] text-slate-400 flex-1 min-w-[10rem]">O valor informado é o total da compra, dividido em parcelas mensais (cartão ou carnê de boletos). Os próximos meses são criados se ainda não existirem.</p>` : ''}
-            </div>`;
+// Grupo de botões de escolha (radios escondidos com rótulos que parecem botões). Os rótulos já chegam escapados.
+export function chipsRadio(nome, opcoes, selecionado, ligacao = '') {
+    return `<div class="flex flex-wrap gap-2" role="radiogroup">${opcoes.map((o, i) => `<span><input type="radio" class="chip-input sr-only" name="${nome}" id="${nome}_${i}" value="${esc(o.valor)}" ${o.valor === selecionado ? 'checked' : ''} ${ligacao}><label for="${nome}_${i}" class="chip">${o.rotulo}</label></span>`).join('')}</div>`;
 }
 
 export function renderLista(mes) {
-    if (!mes.lancamentos.length) return '<p class="text-sm text-slate-400 italic">Nenhum lançamento neste mês ainda.</p>';
+    if (!mes.lancamentos.length) return '<p class="text-sm text-slate-500 italic">Nenhum lançamento neste mês ainda.</p>';
     let itens = mes.lancamentos.slice();
     const q = semAcento(S.filtros.texto);
     if (q) itens = itens.filter(l => semAcento(l.descricao).includes(q) || semAcento(catDoItem(l).nome).includes(q));
@@ -509,7 +529,7 @@ export function renderLista(mes) {
     if (S.filtros.ordem === 'maior') itens.sort((a, b) => num(b.valor) - num(a.valor));
     else if (S.filtros.ordem === 'antigos') itens.sort((a, b) => a.data.localeCompare(b.data));
     else itens.sort((a, b) => b.data.localeCompare(a.data));
-    if (!itens.length) return '<p class="text-sm text-slate-400 italic">Nenhum lançamento encontrado com esses filtros.</p>';
+    if (!itens.length) return '<p class="text-sm text-slate-500 italic">Nenhum lançamento encontrado com esses filtros.</p>';
     const soma = itens.reduce((a, l) => a + num(l.valor), 0);
     return `
         <p class="text-xs text-slate-500">${itens.length} ${itens.length === 1 ? 'lançamento' : 'lançamentos'}, total ${brl(soma)}</p>
@@ -522,9 +542,9 @@ export function renderLista(mes) {
                     <p class="text-xs text-slate-500 flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full shrink-0" data-bg="${c.cor}"></span><span class="truncate">${esc(curto(c.nome))} · ${dataBR(l.data)}${l.pagamento ? ' · ' + nomePag(l.pagamento) : ''}${l.fixaId ? ' · Conta fixa' : ''}</span></p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-sm font-bold ${inv ? 'text-cyan-600' : num(l.valor) < 0 ? 'text-emerald-600' : 'text-rose-600'}">${brl(l.valor)}</span>
-                    <button ${ev('click', 'abrirEdicao', mes.id, l.id)} class="text-sky-700 hover:text-sky-900 font-bold text-xs bg-sky-50 px-2.5 py-2 rounded-lg">Editar</button>
-                    <button ${ev('click', 'removerLanc', mes.id, l.id)} aria-label="Excluir lançamento" class="text-rose-500 hover:text-rose-700 bg-rose-50 px-2.5 py-2 rounded-lg">${LIXEIRA}</button>
+                    <span class="text-sm font-bold ${inv ? 'text-cyan-700' : num(l.valor) < 0 ? 'text-emerald-700' : 'text-rose-600'}">${inv ? '↗ ' + brl(l.valor) : (num(l.valor) < 0 ? '+' : '-') + brl(Math.abs(num(l.valor)))}</span>
+                    <button ${ev('click', 'abrirEdicao', mes.id, l.id)} class="btn btn-secundario btn-sm">Editar</button>
+                    <button ${ev('click', 'removerLanc', mes.id, l.id)} aria-label="Excluir lançamento" class="btn-icone btn-perigo-suave">${LIXEIRA}</button>
                 </div>
             </div>`; }).join('')}</div>`;
 }

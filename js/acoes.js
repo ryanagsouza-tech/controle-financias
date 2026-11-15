@@ -1,12 +1,12 @@
 // Ações do usuário (botões, campos e janelas). Chamadas pelo despachante de eventos em main.js.
 import { CATEGORIAS_SUGERIDAS, FORMAS_COM_PARCELA, FORMAS_PAGAMENTO, MAX_BACKUP_BYTES, NOMES_MESES, PALETA, nomePag } from './constantes.js';
-import { centavos, chaveMes, curto, dataBR, diaDoMes, esc, hojeChave, hojeISO, mesValido, num, pad, reais, uid } from './util.js';
+import { centavos, chaveMes, curto, dataBR, diaDoMes, esc, ev, hojeChave, hojeISO, mesValido, num, pad, reais, uid } from './util.js';
 import { S } from './estado.js';
 import { migrar, validarBackup } from './dados.js';
 import { achaMes, acharSugestao, aplicarFixas, aplicarFixasTodos, catDoItem, catPorId, gerarSerie, limitesMes, mesDoCalendario, posicaoCronologica } from './calculos.js';
 import { lerSnapshots, salvar, salvarSnapshot } from './armazenamento.js';
-import { abrir, aplicarEstilos, avisar, confirmar, fechar, focarCampo, mostrarToast, val } from './ui.js';
-import { renderLista } from './views.js';
+import { abrir, aplicarEstilos, avisar, confirmar, fechar, focarCampo, limparErro, marcado, marcarRadio, mostrarErro, mostrarToast, val, valorRadio } from './ui.js';
+import { chipsRadio, renderLista } from './views.js';
 
 export function dispensarBoasVindas() { S.estado.boasVindasOk = true; salvar(); }
 
@@ -19,9 +19,15 @@ export function adiarBackup() {
 export function sugerirCategoria(mid) {
     const s = acharSugestao(val('novoDesc_' + mid));
     if (!s) return;
-    const cat = document.getElementById('novoCat_' + mid), pag = document.getElementById('novaPag_' + mid);
-    if (cat) cat.value = s.categoriaId;
-    if (pag) { pag.value = s.pagamento; mostrarParcelas(mid); }
+    marcarRadio('novoCat_' + mid, s.categoriaId);
+    marcarRadio('novaPag_' + mid, s.pagamento);
+    mostrarParcelas(mid);
+}
+
+// Enter na descrição aplica a sugestão e leva o foco ao botão Inserir
+export function aposDescLanc(mid) {
+    sugerirCategoria(mid);
+    focarCampo('btnInserir_' + mid);
 }
 
 export async function restaurarPonto(id) {
@@ -36,11 +42,9 @@ export async function restaurarPonto(id) {
 
 // As parcelas só aparecem quando a forma de pagamento é crédito
 export function mostrarParcelas(mid) {
-    const credito = FORMAS_COM_PARCELA.includes(val('novaPag_' + mid));
-    ['boxParcelas_', 'dicaParcelas_'].forEach(p => {
-        const el = document.getElementById(p + mid);
-        if (el) el.classList.toggle('hidden', !credito);
-    });
+    const credito = FORMAS_COM_PARCELA.includes(valorRadio('novaPag_' + mid));
+    const box = document.getElementById('boxParcelas_' + mid);
+    if (box) box.classList.toggle('hidden', !credito);
 }
 
 export function fixaTipoMudou() {
@@ -57,7 +61,8 @@ export function adicionarFixa() {
     else if (dia < 1 || dia > 31) msg = 'Informe o dia do mês, de 1 a 31.';
     else if (!mesValido(ini)) msg = 'Informe o mês de início (formato 2026-11).';
     else if (fim && (!mesValido(fim) || chaveMes(fim) < chaveMes(ini))) msg = 'O mês final precisa ser igual ou posterior ao inicial.';
-    if (msg) { avisar(msg); return; }
+    limparErro('erroFixa');
+    if (msg) { mostrarErro('erroFixa', msg); return; }
     const catPadrao = (S.estado.categorias.find(c => c.tipo === 'gasto') || S.estado.categorias[0] || {}).id || null;
     S.estado.contasFixas.push({ id: 'f_' + uid(), descricao: desc, valor: v, tipo, categoriaId: tipo === 'receita' ? catPadrao : val('fixaCat'), pagamento: tipo === 'receita' ? '' : val('fixaPag'), dia, inicio: ini, fim });
     aplicarFixasTodos();
@@ -171,9 +176,11 @@ export async function removerCategoria(id) {
 export function adicionarReceita(mid) {
     const m = achaMes(mid), v = centavos(val('recVal_' + mid));
     if (!m) return;
-    if (v <= 0) { avisar('Informe um valor maior que zero.'); return; }
+    limparErro('erroRec_' + mid);
+    if (v <= 0) { mostrarErro('erroRec_' + mid, 'Informe um valor maior que zero.'); focarCampo('recVal_' + mid); return; }
     m.receitas.push({ id: uid(), descricao: val('recDesc_' + mid).trim() || 'Receita', valor: v });
     salvar();
+    focarCampo('recDesc_' + mid);
 }
 
 export function editarReceita(mid, rid, campo, v) {
@@ -195,21 +202,27 @@ export function removerReceita(mid, rid) {
 export function adicionarLanc(mid) {
     const m = achaMes(mid);
     if (!m) return;
-    const data = val('novaData_' + mid), desc = val('novoDesc_' + mid).trim(), v = centavos(val('novoValor_' + mid));
-    if (!desc || v === 0) { avisar('Preencha a descrição e um valor diferente de zero (negativo para estorno).'); return; }
+    const erro = (msg, campo) => { mostrarErro('erroLanc_' + mid, msg); if (campo) focarCampo(campo + mid); };
+    limparErro('erroLanc_' + mid);
+    let v = centavos(val('novoValor_' + mid));
+    if (marcado('novoEstorno_' + mid)) v = -Math.abs(v);
+    const data = val('novaData_' + mid), desc = val('novoDesc_' + mid).trim();
+    const cat = valorRadio('novoCat_' + mid), pag = valorRadio('novaPag_' + mid);
+    if (v === 0) { erro('Informe o valor (maior que zero, ou marque Estorno).', 'novoValor_'); return; }
+    if (!desc) { erro('Informe a descrição.', 'novoDesc_'); return; }
+    if (!cat) { erro('Escolha uma categoria.'); return; }
     const lim = limitesMes(m);
-    if (!data || (lim && (data < lim.ini || data > lim.fim))) { avisar('A data precisa estar dentro de ' + m.nome + '.'); return; }
-    const pag = val('novaPag_' + mid);
+    if (!data || (lim && (data < lim.ini || data > lim.fim))) { erro('A data precisa estar dentro de ' + m.nome + '.', 'novaData_'); return; }
     const parcelas = FORMAS_COM_PARCELA.includes(pag) ? (parseInt(val('novaParc_' + mid)) || 1) : 1;
-    if (parcelas > 48) { avisar('O máximo é 48 parcelas.'); return; }
-    if (v < 0 && parcelas > 1) { avisar('Um estorno não pode ser parcelado.'); return; }
+    if (parcelas > 48) { erro('O máximo é 48 parcelas.', 'novaParc_'); return; }
+    if (v < 0 && parcelas > 1) { erro('Um estorno não pode ser parcelado.'); return; }
     if (parcelas > 1 && lim) {
-        gerarSerie(data, val('novoCat_' + mid), desc, v, pag, parcelas);
+        gerarSerie(data, cat, desc, v, pag, parcelas);
     } else {
-        m.lancamentos.push({ id: uid(), data, categoriaId: val('novoCat_' + mid), descricao: desc, valor: v, pagamento: pag, grupo: null, parcela: '', fixaId: '' });
+        m.lancamentos.push({ id: uid(), data, categoriaId: cat, descricao: desc, valor: v, pagamento: pag, grupo: null, parcela: '', fixaId: '' });
     }
     salvar();
-    focarCampo('novoDesc_' + mid);
+    focarCampo('novoValor_' + mid);
 }
 
 export async function removerLanc(mid, lid) {
@@ -312,39 +325,43 @@ export function confirmarNovoMes() {
 export function abrirRapido() {
     const gastoPadrao = (S.estado.categorias.find(c => c.tipo === 'gasto') || S.estado.categorias[0] || {}).id || '';
     const cat = S.estado.categorias.some(c => c.id === S.ultimaCatRapida) ? S.ultimaCatRapida : gastoPadrao;
-    document.getElementById('rapCat').innerHTML = S.estado.categorias.map(c => `<option value="${c.id}" ${c.id === cat ? 'selected' : ''}>${esc(c.nome)}</option>`).join('');
-    document.getElementById('rapPag').innerHTML = '<option value="">Não informar</option>' + FORMAS_PAGAMENTO.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+    document.getElementById('rapCat').innerHTML = chipsRadio('rapCat', S.estado.categorias.map(c => ({ valor: c.id, rotulo: esc(curto(c.nome)) })), cat);
+    document.getElementById('rapPag').innerHTML = chipsRadio('rapPag', [{ valor: '', rotulo: 'Não informar' }, ...FORMAS_PAGAMENTO.map(f => ({ valor: f.id, rotulo: f.nome }))], '', ev('change', 'rapidoMostrarParcelas'));
     document.getElementById('rapValor').value = '';
     document.getElementById('rapDesc').value = '';
     document.getElementById('rapData').value = hojeISO();
     document.getElementById('rapParc').value = '1';
+    document.getElementById('rapEstorno').checked = false;
     document.getElementById('boxRapParc').classList.add('hidden');
-    document.getElementById('rapErro').classList.add('hidden');
+    limparErro('rapErro');
     abrir('modalRapido');
 }
 
 export function rapidoMostrarParcelas() {
-    document.getElementById('boxRapParc').classList.toggle('hidden', !FORMAS_COM_PARCELA.includes(val('rapPag')));
+    document.getElementById('boxRapParc').classList.toggle('hidden', !FORMAS_COM_PARCELA.includes(valorRadio('rapPag')));
 }
 
 export function sugerirRapido() {
     const s = acharSugestao(val('rapDesc'));
     if (!s) return;
-    document.getElementById('rapCat').value = s.categoriaId;
-    document.getElementById('rapPag').value = s.pagamento;
+    marcarRadio('rapCat', s.categoriaId);
+    marcarRadio('rapPag', s.pagamento);
     rapidoMostrarParcelas();
 }
 
 export function salvarRapido() {
-    const v = centavos(val('rapValor')), desc = val('rapDesc').trim(), data = val('rapData'), cat = val('rapCat'), pag = val('rapPag');
+    let v = centavos(val('rapValor'));
+    if (marcado('rapEstorno')) v = -Math.abs(v);
+    const desc = val('rapDesc').trim(), data = val('rapData'), cat = valorRadio('rapCat'), pag = valorRadio('rapPag');
     const parcelas = FORMAS_COM_PARCELA.includes(pag) ? (parseInt(val('rapParc')) || 1) : 1;
     const ano = parseInt(data.slice(0, 4)), mes = parseInt(data.slice(5, 7));
     let msg = '';
-    if (v === 0 || !desc) msg = 'Informe o valor (negativo para estorno) e a descrição.';
+    if (v === 0 || !desc) msg = 'Informe o valor (maior que zero, ou marque Estorno) e a descrição.';
+    else if (!cat) msg = 'Escolha uma categoria.';
     else if (v < 0 && parcelas > 1) msg = 'Um estorno não pode ser parcelado.';
     else if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || !(ano >= 1900 && ano <= 2999) || !(mes >= 1 && mes <= 12)) msg = 'Informe uma data válida.';
     else if (parcelas < 1 || parcelas > 48) msg = 'As parcelas vão de 1 a 48.';
-    if (msg) { const e = document.getElementById('rapErro'); e.textContent = msg; e.classList.remove('hidden'); return; }
+    if (msg) { mostrarErro('rapErro', msg); return; }
     S.ultimaCatRapida = cat;
     if (parcelas > 1) gerarSerie(data, cat, desc, v, pag, parcelas);
     else mesDoCalendario(ano, mes).lancamentos.push({ id: uid(), data, categoriaId: cat, descricao: desc, valor: v, pagamento: pag, grupo: null, parcela: '', fixaId: '' });

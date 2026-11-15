@@ -6,6 +6,31 @@ import { salvar } from './armazenamento.js';
 
 export const val = id => (document.getElementById(id) || {}).value || '';
 
+export const marcado = id => !!(document.getElementById(id) || {}).checked;
+
+// Escolha por botões (radios escondidos): lê e define o valor marcado de um grupo
+export function valorRadio(nome) {
+    const el = document.querySelector(`input[name="${nome}"]:checked`);
+    return el ? el.value : '';
+}
+export function marcarRadio(nome, valor) {
+    const el = document.querySelector(`input[name="${nome}"][value="${valor}"]`);
+    if (el) el.checked = true;
+    return !!el;
+}
+
+// Erro de preenchimento mostrado ao lado do campo, sem janela que interrompe
+export function mostrarErro(id, msg) {
+    const e = document.getElementById(id);
+    if (!e) { avisar(msg); return; }
+    e.textContent = msg;
+    e.classList.remove('hidden');
+}
+export function limparErro(id) {
+    const e = document.getElementById(id);
+    if (e) { e.textContent = ''; e.classList.add('hidden'); }
+}
+
 export function focarCampo(id) {
     setTimeout(() => {
         const el = document.getElementById(id);
@@ -54,7 +79,7 @@ export function dialogo(texto, o = {}) {
         document.getElementById('confirmaTexto').textContent = texto;
         const ok = document.getElementById('confirmaOk'), cancelar = document.getElementById('confirmaCancelar');
         ok.textContent = o.ok || 'OK';
-        ok.className = 'px-4 py-2 text-xs font-bold text-white rounded-lg shadow ' + (o.perigo ? 'bg-rose-600 hover:bg-rose-700' : 'bg-sky-600 hover:bg-sky-700');
+        ok.className = 'btn ' + (o.perigo ? 'btn-perigo' : 'btn-primario');
         cancelar.textContent = o.cancelar || 'Cancelar';
         cancelar.classList.toggle('hidden', !!o.apenasOk);
         abrir('modalConfirma');
@@ -72,7 +97,7 @@ export function fecharDialogo(v) {
 export function mostrarToast(msg, snap) {
     S.desfazerSnap = snap || null;
     const el = document.getElementById('toast');
-    el.innerHTML = `<span>${esc(msg)}</span>${snap ? `<button ${ev('click', 'desfazer')} class="font-bold text-sky-300 hover:text-sky-200 px-2 py-1">Desfazer</button>` : ''}`;
+    el.innerHTML = `<span>${esc(msg)}</span>${snap ? `<button ${ev('click', 'desfazer')} class="btn btn-sm btn-texto text-sky-300 hover:text-sky-200">Desfazer</button>` : ''}`;
     el.classList.remove('hidden');
     clearTimeout(S.toastTimer);
     S.toastTimer = setTimeout(() => el.classList.add('hidden'), 8000);

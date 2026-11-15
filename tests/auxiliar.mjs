@@ -27,9 +27,20 @@ export function elemento() {
 }
 
 export const els = {};
+
+// Botões de escolha (radios): o grupo guarda o valor marcado. Os testes usam escolher('nome', 'valor').
+export const radios = {};
+export const escolher = (nome, valor) => { radios[nome] = valor; };
+function achar(seletor) {
+    let m = seletor.match(/^input\[name="([^"]+)"\]:checked$/);
+    if (m) return radios[m[1]] !== undefined ? { value: radios[m[1]] } : null;
+    m = seletor.match(/^input\[name="([^"]+)"\]\[value="([^"]*)"\]$/);
+    if (m) return { set checked(v) { if (v) radios[m[1]] = m[2]; } };
+    return elemento();
+}
 globalThis.document = {
     getElementById: id => els[id] || (els[id] = elemento()),
-    querySelector: () => elemento(), querySelectorAll: () => [],
+    querySelector: seletor => achar(seletor), querySelectorAll: () => [],
     documentElement: elemento(), createElement: () => ({ click() {}, remove() {} }),
     body: { appendChild() {} }, addEventListener() {}, activeElement: null
 };

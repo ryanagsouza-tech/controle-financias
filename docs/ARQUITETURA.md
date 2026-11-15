@@ -35,3 +35,11 @@ constantes  <  util  <  estado  <  dados  <  calculos  <  armazenamento
 ## Formato dos dados
 
 `VERSAO_DADOS` (em `constantes.js`) marca a versão. `migrar()` aceita qualquer versão antiga. Para criar a versão seguinte, aumente o número e trate a mudança em `normalizar()`.
+
+## Padrões de interface
+
+- Botões usam `btn` com `btn-primario`, `btn-secundario` ou `btn-perigo` (e `btn-icone` para só ícone). As cores e o tamanho ficam em `src/input.css`, e o teste `tests/design.test.mjs` impede que botões fora do padrão apareçam.
+- O alvo de toque mínimo é 44 px no celular (variável `--alvo`). A fonte mínima é 12 px.
+- Escolhas curtas (categoria, forma de pagamento) usam `chipsRadio()`, que gera radios escondidos com rótulos em forma de botão.
+- Erros de preenchimento aparecem ao lado do campo (`mostrarErro`). Janelas ficam para confirmações.
+- As cores de texto passam no contraste de 4,5:1, e o teste confere o par de cada uma.

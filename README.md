@@ -13,6 +13,9 @@ Controle financeiro pessoal que roda no navegador do celular ou do computador. O
 - Desfazer a última exclusão, pontos de restauração automáticos (um por dia e um antes de cada atualização) e resumo por forma de pagamento (inclui o total do crédito do mês).
 - Comparação de cada categoria com o mês anterior.
 - Menu lateral compacto, com meses agrupados por ano e um puxador para abrir e fechar no celular.
+- No celular, barra de navegação inferior (Início, Mês, Fixas, Mais) e seletor de mês no topo da tela do mês.
+- Controles de 44 px no celular, botões em 3 níveis e cores com contraste adequado.
+- Novo lançamento com botões de escolha, estorno e erros ao lado do campo.
 - Saldo inicial e saldo acumulado, seguindo a ordem cronológica dos meses.
 - Forma de pagamento em cada lançamento (débito, crédito, Pix, dinheiro ou boleto). No crédito e no boleto você informa as parcelas, e os meses seguintes são criados automaticamente.
 - Trimestres do calendário (janeiro a março é o 1º), calculados automaticamente a partir do mês.

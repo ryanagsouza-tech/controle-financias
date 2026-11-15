@@ -1,5 +1,5 @@
 // Testes das ações do usuário, com a tela simulada.
-import { els, elemento, cats, janela } from './auxiliar.mjs';
+import { els, elemento, cats, janela, escolher } from './auxiliar.mjs';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -29,15 +29,22 @@ const mes = () => achaMes(`m_${A}_${p2(M)}`);
 
 async function lancar(desc, valor, extra = {}) {
     const id = mes().id;
-    campo('novaData_' + id, extra.data || dia(10)); campo('novoCat_' + id, extra.cat || 'Lazer');
+    campo('novaData_' + id, extra.data || dia(10)); escolher('novoCat_' + id, extra.cat || 'Lazer');
     campo('novoDesc_' + id, desc); campo('novoValor_' + id, valor);
-    campo('novaPag_' + id, extra.pag || ''); campo('novaParc_' + id, extra.parc || '1');
+    escolher('novaPag_' + id, extra.pag || ''); campo('novaParc_' + id, extra.parc || '1'); els['novoEstorno_' + id] = els['novoEstorno_' + id] || elemento(); els['novoEstorno_' + id].checked = !!extra.estorno;
     a.adicionarLanc(id);
 }
 
 test('adicionar lançamento grava em centavos', async () => {
     await lancar('Cinema', '45,90');
     assert.equal(mes().lancamentos[0].valor, 4590);
+});
+
+test('valor zero mostra o erro ao lado do campo, sem janela', async () => {
+    await lancar('Nada', '0');
+    assert.equal(mes().lancamentos.length, 0);
+    assert.match(els['erroLanc_' + mes().id].textContent, /Informe o valor/);
+    assert.equal(janela.avisos.length, 0, 'não deve abrir janela');
 });
 
 test('valor zero é recusado e estorno (negativo) é aceito', async () => {
@@ -120,7 +127,7 @@ test('receita fixa entra em receitas, não em lançamentos', () => {
 
 test('lançamento rápido cria o mês se ele não existir', () => {
     ['rapCat', 'rapPag', 'rapValor', 'rapDesc', 'rapData', 'rapParc', 'rapErro'].forEach(i => campo(i, ''));
-    campo('rapValor', '10'); campo('rapDesc', 'Café'); campo('rapCat', 'Lazer'); campo('rapPag', 'pix'); campo('rapParc', '1');
+    campo('rapValor', '10'); campo('rapDesc', 'Café'); escolher('rapCat', 'Lazer'); escolher('rapPag', 'pix'); campo('rapParc', '1');
     campo('rapData', `${A + 1}-03-02`);
     a.salvarRapido();
     const m = achaMes(`m_${A + 1}_03`);
@@ -169,4 +176,41 @@ test('exportar CSV protege contra fórmula de planilha', async () => {
     globalThis.URL = Object.assign(URL, { createObjectURL: () => 'blob:x', revokeObjectURL() {} });
     a.exportarCSV();
     assert.ok(conteudo.includes('"\'=HYPERLINK'), 'a fórmula deve começar com apóstrofo');
+});
+
+test('marcar Estorno torna o valor negativo, mesmo digitado positivo', async () => {
+    await lancar('Reembolso', '30', { estorno: true });
+    assert.equal(mes().lancamentos[0].valor, -3000);
+});
+
+test('sem categoria escolhida o lançamento é recusado', async () => {
+    const id = mes().id;
+    campo('novaData_' + id, dia(10)); escolher('novoCat_' + id, ''); campo('novoDesc_' + id, 'x'); campo('novoValor_' + id, '10');
+    a.adicionarLanc(id);
+    assert.equal(mes().lancamentos.length, 0);
+    assert.match(els['erroLanc_' + id].textContent, /categoria/);
+});
+
+test('receita sem valor mostra o erro ao lado do campo', () => {
+    const id = mes().id;
+    campo('recDesc_' + id, 'Salário'); campo('recVal_' + id, '');
+    a.adicionarReceita(id);
+    assert.equal(mes().receitas.length, 0);
+    assert.match(els['erroRec_' + id].textContent, /valor/);
+    assert.equal(janela.avisos.length, 0);
+});
+
+test('conta fixa inválida mostra o erro ao lado do campo', () => {
+    ['fixaTipo', 'fixaDesc', 'fixaValor', 'fixaDia', 'fixaCat', 'fixaPag', 'fixaInicio', 'fixaFim'].forEach(i => campo(i, ''));
+    a.adicionarFixa();
+    assert.match(els.erroFixa.textContent, /descrição/);
+    assert.equal(S.estado.contasFixas.length, 0);
+});
+
+test('lançamento rápido: estorno marcado vira valor negativo', () => {
+    ['rapCat', 'rapPag', 'rapValor', 'rapDesc', 'rapData', 'rapParc', 'rapErro', 'rapEstorno'].forEach(i => campo(i, ''));
+    campo('rapValor', '50'); campo('rapDesc', 'Estorno'); escolher('rapCat', 'Lazer'); escolher('rapPag', '');
+    campo('rapData', dia(12)); els.rapEstorno.checked = true;
+    a.salvarRapido();
+    assert.equal(mes().lancamentos[0].valor, -5000);
 });

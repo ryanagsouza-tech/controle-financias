@@ -1,5 +1,15 @@
 # Histórico de mudanças
 
+## 4.2.0
+- Design do celular: barra de navegação inferior (Início, Mês, Fixas, Mais) e seletor de mês no topo da tela do mês, com setas para o anterior e o seguinte.
+- Todos os controles do celular com no mínimo 44 px de altura, e fonte nunca abaixo de 12 px.
+- Botões em 3 níveis (principal, secundário e perigo), com a mesma altura em todas as telas.
+- Cores de botões e valores com contraste mínimo de 4,5:1.
+- Novo lançamento: valor grande no topo, categoria e forma de pagamento em botões de escolha, opção "Estorno" e erros de preenchimento ao lado do campo, sem janela.
+- Valores com sinal e ícone, além da cor (gasto com menos, estorno com mais, investimento com seta), e números alinhados.
+- Visão geral: lista de cartões no celular no lugar da tabela de 7 colunas.
+- Ícones em SVG no lugar de emoji.
+
 ## 4.1.0
 - Testes das telas, correção da tecla Enter em campos de descrição e do comando `npm test`.
 - Documentação de arquitetura, política de segurança e histórico de mudanças.

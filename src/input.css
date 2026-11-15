@@ -16,6 +16,54 @@ input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 0.5rem; }
 input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0.5rem; }
 
+/* ===== Botões em 3 níveis (principal, secundário e perigo), todos com a mesma altura ===== */
+:root { --alvo: 2.75rem; } /* 44 px: tamanho mínimo confortável para o dedo */
+body { font-variant-numeric: tabular-nums; } /* números com a mesma largura, para valores alinhados */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: var(--alvo); padding: 0 1rem; border-radius: 0.75rem; border: 1px solid transparent; font-size: 0.875rem; font-weight: 700; line-height: 1.25; cursor: pointer; transition: background-color 0.15s; }
+.btn-sm { padding: 0 0.75rem; font-size: 0.8125rem; }
+.btn-icone { display: inline-flex; align-items: center; justify-content: center; min-width: var(--alvo); min-height: var(--alvo); border-radius: 0.75rem; cursor: pointer; }
+.btn:disabled, .btn-icone:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primario { background: #0369a1; color: #fff; }
+.btn-primario:hover { background: #075985; }
+.btn-secundario { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+.btn-secundario:hover { background: #e2e8f0; }
+.btn-perigo { background: #be123c; color: #fff; }
+.btn-perigo:hover { background: #9f1239; }
+.btn-perigo-suave { background: #fff1f2; color: #be123c; }
+.btn-perigo-suave:hover { background: #ffe4e6; }
+.btn-texto { background: transparent; border-color: transparent; }
+
+/* Escolha por botões (categoria e forma de pagamento): um radio escondido e um rótulo que parece botão */
+.chip { display: inline-flex; align-items: center; min-height: var(--alvo); padding: 0 0.875rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background: #fff; color: #334155; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+.chip-input:checked + .chip { background: #0369a1; border-color: #0369a1; color: #fff; }
+.chip-input:focus-visible + .chip { outline: 2px solid #0284c7; outline-offset: 2px; }
+
+@media (min-width: 768px) {
+  .btn, .chip { min-height: 2.25rem; }
+  .btn-sm { min-height: 2rem; }
+  .btn-icone { min-width: 2.25rem; min-height: 2.25rem; }
+}
+
+/* Celular: todo controle toca com folga */
+@media (max-width: 767px) {
+  select, input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]) { min-height: var(--alvo); }
+  button, label.cursor-pointer { min-height: var(--alvo); min-width: var(--alvo); }
+}
+
+/* Posições fixas e áreas seguras do celular (notch e barra de gestos) */
+.safe-top { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+.safe-bottom-sm { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+.barra-inferior { padding-bottom: env(safe-area-inset-bottom); }
+.main-pad { padding-bottom: calc(9.5rem + env(safe-area-inset-bottom)); }
+.fab-pos { bottom: calc(5rem + env(safe-area-inset-bottom)); }
+.toast-pos { bottom: calc(9rem + env(safe-area-inset-bottom)); }
+.puxador { left: 0; transition: left 0.3s ease; }
+@media (min-width: 768px) {
+  .main-pad { padding-bottom: 6rem; }
+  .fab-pos { bottom: 1.5rem; }
+  .toast-pos { bottom: 5.5rem; }
+}
+
 /* Acessibilidade: contorno visível para quem usa teclado e contraste mínimo nos textos de apoio */
 :focus-visible { outline: 2px solid #0284c7; outline-offset: 2px; }
 .text-slate-400 { color: #64748b; }
@@ -53,11 +101,13 @@ html[data-tema="escuro"] .text-slate-600 { color: #cbd5e1; }
 html[data-tema="escuro"] .text-slate-500 { color: #94a3b8; }
 html[data-tema="escuro"] .text-slate-400 { color: #7c8aa0; }
 html[data-tema="escuro"] .text-emerald-900 { color: #6ee7b7; }
-html[data-tema="escuro"] .text-emerald-600 { color: #34d399; }
+html[data-tema="escuro"] .text-emerald-600,
+html[data-tema="escuro"] .text-emerald-700 { color: #34d399; }
 html[data-tema="escuro"] .text-rose-600 { color: #fb7185; }
 html[data-tema="escuro"] .text-rose-700 { color: #fda4af; }
 html[data-tema="escuro"] .text-cyan-900,
-html[data-tema="escuro"] .text-cyan-600 { color: #22d3ee; }
+html[data-tema="escuro"] .text-cyan-600,
+html[data-tema="escuro"] .text-cyan-700 { color: #22d3ee; }
 html[data-tema="escuro"] .text-sky-900,
 html[data-tema="escuro"] .text-sky-800,
 html[data-tema="escuro"] .text-sky-700 { color: #7dd3fc; }
@@ -70,3 +120,12 @@ html[data-tema="escuro"] .hover\:bg-sky-100:hover,
 html[data-tema="escuro"] .hover\:bg-sky-200:hover { background-color: #0c4a6e; }
 html[data-tema="escuro"] .hover\:bg-rose-100:hover { background-color: #4c1d2b; }
 html[data-tema="escuro"] .hover\:text-slate-900:hover { color: #ffffff; }
+
+/* Tema escuro: botões e chips */
+html[data-tema="escuro"] .btn-secundario { background: #1e293b; color: #e2e8f0; border-color: #334155; }
+html[data-tema="escuro"] .btn-secundario:hover { background: #263248; }
+html[data-tema="escuro"] .btn-perigo-suave { background: #3a1620; color: #fda4af; }
+html[data-tema="escuro"] .btn-perigo-suave:hover { background: #4c1d2b; }
+html[data-tema="escuro"] .chip { background: #1e293b; color: #e2e8f0; border-color: #334155; }
+html[data-tema="escuro"] .chip-input:checked + .chip { background: #0369a1; border-color: #0369a1; color: #fff; }
+html[data-tema="escuro"] .bg-sky-700 { background-color: #0369a1; }
