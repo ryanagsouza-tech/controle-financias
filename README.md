@@ -12,7 +12,11 @@ Controle financeiro pessoal que roda no navegador do celular ou do computador. O
 - Lançamento rápido pelo botão +, com sugestão de categoria e forma de pagamento pela descrição.
 - Desfazer a última exclusão, pontos de restauração automáticos (um por dia e um antes de cada atualização) e resumo por forma de pagamento (inclui o total do crédito do mês).
 - Comparação de cada categoria com o mês anterior.
-- Menu lateral compacto, com meses agrupados por ano e um puxador para abrir e fechar no celular.
+- Menu lateral compacto, com meses agrupados por ano. No celular, o botão do menu fica no canto esquerdo.
+- Cartão de crédito configurável (fatura no mesmo mês ou no seguinte, dia de vencimento e de fechamento): a compra entra no mês em que a fatura é paga.
+- Saldos iniciais de conta, investimento e gastos.
+- Reembolso de gastos divididos (o valor devolvido reduz o gasto e não conta como renda).
+- Metas de economia com progresso e valor mensal até o prazo.
 - No celular, barra de navegação inferior (Início, Mês, Fixas, Mais) e seletor de mês no topo da tela do mês.
 - Controles de 44 px no celular, botões em 3 níveis e cores com contraste adequado.
 - Novo lançamento com botões de escolha, estorno e erros ao lado do campo.

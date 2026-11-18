@@ -43,3 +43,11 @@ constantes  <  util  <  estado  <  dados  <  calculos  <  armazenamento
 - Escolhas curtas (categoria, forma de pagamento) usam `chipsRadio()`, que gera radios escondidos com rótulos em forma de botão.
 - Erros de preenchimento aparecem ao lado do campo (`mostrarErro`). Janelas ficam para confirmações.
 - As cores de texto passam no contraste de 4,5:1, e o teste confere o par de cada uma.
+
+## Cartão de crédito
+
+`dataDeCobranca()` (em `js/calculos.js`) decide em que mês e dia uma compra no crédito é cobrada, usando a configuração `estado.credito` (vence no mesmo mês ou no seguinte, dia de vencimento e dia de fechamento). O lançamento é gravado no mês da fatura, com a data de vencimento em `data` e a data da compra em `compra`. Sem configuração (padrão), o comportamento é o antigo: vale a data da compra.
+
+## Reembolso
+
+Um reembolso é um lançamento negativo (estorno) na mesma categoria. Assim o gasto líquido fica só com a parte da pessoa, o saldo da conta continua exato no dia em que o dinheiro entra e nada é contado como renda.

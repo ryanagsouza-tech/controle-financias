@@ -81,7 +81,8 @@ export function normalizar(bruto, versaoOrigem) {
                 grupo: l.grupo ? String(l.grupo).replace(/[^a-zA-Z0-9_-]/g, '_') : null,
                 parcela: l.parcela ? String(l.parcela) : '',
                 pagamento: FORMAS_PAGAMENTO.some(f => f.id === l.pagamento) ? l.pagamento : '',
-                fixaId: l.fixaId ? String(l.fixaId).replace(/[^a-zA-Z0-9_-]/g, '_') : ''
+                fixaId: l.fixaId ? String(l.fixaId).replace(/[^a-zA-Z0-9_-]/g, '_') : '',
+                compra: /^\d{4}-\d{2}-\d{2}$/.test(String(l.compra || '')) ? String(l.compra) : ''
             }))
         };
     });
@@ -97,7 +98,40 @@ export function normalizar(bruto, versaoOrigem) {
         });
     }
     const feitoEm = !ehLista && /^\d{4}-\d{2}-\d{2}$/.test(String(bruto.ultimoBackup || '')) ? String(bruto.ultimoBackup) : '';
-    return { versao: VERSAO_DADOS, saldoInicial: ehLista ? 0 : conv(bruto.saldoInicial), boasVindasOk: !ehLista && !!bruto.boasVindasOk, ultimoBackup: feitoEm, backupAdiadoAte: !ehLista && /^\d{4}-\d{2}-\d{2}$/.test(String(bruto.backupAdiadoAte || '')) ? String(bruto.backupAdiadoAte) : '', categorias: cats, contasFixas, meses };
+    const centavosNovos = v => Math.max(0, Math.round(num(v)));
+    return { versao: VERSAO_DADOS, saldoInicial: ehLista ? 0 : conv(bruto.saldoInicial), saldoInicialInvest: ehLista ? 0 : centavosNovos(bruto.saldoInicialInvest), gastoInicial: ehLista ? 0 : centavosNovos(bruto.gastoInicial), credito: normalizarCredito(ehLista ? null : bruto.credito), metas: ehLista ? [] : normalizarMetas(bruto.metas, cats), boasVindasOk: !ehLista && !!bruto.boasVindasOk, ultimoBackup: feitoEm, backupAdiadoAte: !ehLista && /^\d{4}-\d{2}-\d{2}$/.test(String(bruto.backupAdiadoAte || '')) ? String(bruto.backupAdiadoAte) : '', categorias: cats, contasFixas, meses };
+}
+
+// Como o cartão de crédito da pessoa funciona: a fatura vence no mesmo mês da compra ou no seguinte,
+// em que dia vence e, se quiser, em que dia a fatura fecha (0 = não usar).
+export function normalizarCredito(c) {
+    const o = c && typeof c === 'object' ? c : {};
+    return {
+        vence: o.vence === 'seguinte' ? 'seguinte' : 'mesmo',
+        diaVencimento: Math.min(31, Math.max(1, parseInt(o.diaVencimento) || 5)),
+        diaFechamento: Math.min(31, Math.max(0, parseInt(o.diaFechamento) || 0))
+    };
+}
+
+// Metas de economia: acompanham uma categoria de investimento até um valor, com prazo opcional
+export function normalizarMetas(lista, categorias) {
+    if (!Array.isArray(lista)) return [];
+    const ids = new Set();
+    const invest = categorias.find(c => c.tipo === 'investimento');
+    return lista.filter(m => m && typeof m === 'object').map((m, i) => {
+        let id = String(m.id || 'g_' + i).replace(/[^a-zA-Z0-9_-]/g, '_');
+        while (ids.has(id)) id += '_' + i;
+        ids.add(id);
+        const cat = categorias.some(c => c.id === m.categoriaId && c.tipo === 'investimento') ? m.categoriaId : (invest ? invest.id : null);
+        return {
+            id,
+            nome: String(m.nome || 'Meta'),
+            alvo: Math.max(0, Math.round(num(m.alvo))),
+            inicial: Math.max(0, Math.round(num(m.inicial))),
+            categoriaId: cat,
+            prazo: mesValido(m.prazo) ? String(m.prazo) : ''
+        };
+    });
 }
 
 export function normalizarFixas(lista, categorias) {

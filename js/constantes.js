@@ -1,8 +1,8 @@
 // Constantes do app: versões, categorias padrão, formas de pagamento e ícones.
-export const VERSAO_APP = '4.2.0';
+export const VERSAO_APP = '4.3.0';
 export const MAX_BACKUP_BYTES = 5 * 1024 * 1024; // tamanho máximo de um arquivo de backup
 
-export const VERSAO_DADOS = 6; // 1 = lista de meses, 2 = valores em reais, 3 = valores em centavos, 4 = categorias novas e forma de pagamento, 5 = contas fixas, 6 = categorias enxutas, receita fixa e data do último backup
+export const VERSAO_DADOS = 7; // 1 = lista de meses, 2 = reais, 3 = centavos, 4 = categorias e pagamento, 5 = contas fixas, 6 = categorias enxutas, 7 = saldos iniciais, cartão de crédito e metas
 
 export const CHAVE_V3 = 'controle_financeiro_v3'; // só usada se o IndexedDB não estiver disponível
 

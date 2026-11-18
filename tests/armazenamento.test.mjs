@@ -14,7 +14,7 @@ test('grava e lê o estado no IndexedDB', async () => {
     S.estado = base();
     await arm.persistir();
     const lido = await arm.lerDB('estado');
-    assert.equal(lido.versao, 6);
+    assert.equal(lido.versao, 7);
     assert.equal(lido.meses[0].receitas[0].valor, 100000);
     assert.equal(S.storageOk, true);
 });
@@ -50,7 +50,7 @@ test('dados antigos: guarda uma cópia do formato antigo antes de migrar', async
     await arm.gravarDB('estado', { versao: 3, saldoInicial: 100000, categorias: [], meses: [] });
     await arm.gravarDB('snapshots', []);
     const e = await arm.carregar();
-    assert.equal(e.versao, 6);
+    assert.equal(e.versao, 7);
     const l = await arm.lerSnapshots();
     assert.equal(l.length, 1);
     assert.equal(JSON.parse(l[0].json).versao, 3, 'o ponto guarda o formato antigo');

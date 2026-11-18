@@ -1,9 +1,9 @@
 // Ações do usuário (botões, campos e janelas). Chamadas pelo despachante de eventos em main.js.
 import { CATEGORIAS_SUGERIDAS, FORMAS_COM_PARCELA, FORMAS_PAGAMENTO, MAX_BACKUP_BYTES, NOMES_MESES, PALETA, nomePag } from './constantes.js';
-import { centavos, chaveMes, curto, dataBR, diaDoMes, esc, ev, hojeChave, hojeISO, mesValido, num, pad, reais, uid } from './util.js';
+import { brl, centavos, chaveMes, curto, dataBR, diaDoMes, esc, ev, hojeChave, hojeISO, mesValido, num, pad, reais, uid } from './util.js';
 import { S } from './estado.js';
 import { migrar, validarBackup } from './dados.js';
-import { achaMes, acharSugestao, aplicarFixas, aplicarFixasTodos, catDoItem, catPorId, gerarSerie, limitesMes, mesDoCalendario, posicaoCronologica } from './calculos.js';
+import { achaMes, acharSugestao, aplicarFixas, aplicarFixasTodos, catDoItem, catPorId, dataDeCobranca, gerarSerie, limitesMes, mesDoCalendario, posicaoCronologica, totais } from './calculos.js';
 import { lerSnapshots, salvar, salvarSnapshot } from './armazenamento.js';
 import { abrir, aplicarEstilos, avisar, confirmar, fechar, focarCampo, limparErro, marcado, marcarRadio, mostrarErro, mostrarToast, val, valorRadio } from './ui.js';
 import { chipsRadio, renderLista } from './views.js';
@@ -138,10 +138,23 @@ export function filtrar(campo, mesId, valor) {
 export function aposDescRapida() { sugerirRapido(); focarCampo('rapCat'); }
 
 export function definirSaldoInicial(v) { S.estado.saldoInicial = centavos(v); salvar(); }
+export function definirSaldoInicialInvest(v) { S.estado.saldoInicialInvest = Math.max(0, centavos(v)); salvar(); }
+export function definirGastoInicial(v) { S.estado.gastoInicial = Math.max(0, centavos(v)); salvar(); }
 
-export function adicionarCategoria() {
-    S.estado.categorias.push({ id: 'c_' + uid(), nome: 'Nova categoria', cor: PALETA[S.estado.categorias.length % PALETA.length], tipo: 'gasto', orcamento: 0 });
+// Jeito que o cartão de crédito da pessoa funciona (vencimento no mês seguinte, dia de vencimento e de fechamento)
+export function definirCredito(campo, valor) {
+    const c = S.estado.credito;
+    if (campo === 'vence') c.vence = valor === 'seguinte' ? 'seguinte' : 'mesmo';
+    else if (campo === 'diaVencimento') c.diaVencimento = Math.min(31, Math.max(1, parseInt(valor) || c.diaVencimento));
+    else if (campo === 'diaFechamento') c.diaFechamento = Math.min(31, Math.max(0, parseInt(valor) || 0));
     salvar();
+}
+
+// Texto do aviso quando uma compra no crédito cai em outro mês por causa da fatura
+function avisoFatura(data, pag) {
+    if (pag !== 'credito') return '';
+    const c = dataDeCobranca(data, S.estado.credito);
+    return c.compra ? `Compra no crédito lançada na fatura de ${NOMES_MESES[c.mes - 1]} (vence ${dataBR(c.data)}).` : '';
 }
 
 export function editarCategoria(id, campo, v) {
@@ -151,6 +164,11 @@ export function editarCategoria(id, campo, v) {
     else if (campo === 'cor' && /^#[0-9a-f]{6}$/i.test(v)) c.cor = v;
     else if (campo === 'tipo') c.tipo = v === 'investimento' ? 'investimento' : 'gasto';
     else if (campo === 'orcamento') c.orcamento = Math.max(0, centavos(v));
+    salvar();
+}
+
+export function adicionarCategoria() {
+    S.estado.categorias.push({ id: 'c_' + uid(), nome: 'Nova categoria', cor: PALETA[S.estado.categorias.length % PALETA.length], tipo: 'gasto', orcamento: 0 });
     salvar();
 }
 
@@ -216,12 +234,19 @@ export function adicionarLanc(mid) {
     const parcelas = FORMAS_COM_PARCELA.includes(pag) ? (parseInt(val('novaParc_' + mid)) || 1) : 1;
     if (parcelas > 48) { erro('O máximo é 48 parcelas.', 'novaParc_'); return; }
     if (v < 0 && parcelas > 1) { erro('Um estorno não pode ser parcelado.'); return; }
+    let aviso = '';
     if (parcelas > 1 && lim) {
         gerarSerie(data, cat, desc, v, pag, parcelas);
+        aviso = avisoFatura(data, pag);
+    } else if (pag === 'credito' && lim) {
+        const c = dataDeCobranca(data, S.estado.credito);
+        mesDoCalendario(c.ano, c.mes).lancamentos.push({ id: uid(), data: c.data, compra: c.compra, categoriaId: cat, descricao: desc, valor: v, pagamento: pag, grupo: null, parcela: '', fixaId: '' });
+        aviso = avisoFatura(data, pag);
     } else {
-        m.lancamentos.push({ id: uid(), data, categoriaId: cat, descricao: desc, valor: v, pagamento: pag, grupo: null, parcela: '', fixaId: '' });
+        m.lancamentos.push({ id: uid(), data, compra: '', categoriaId: cat, descricao: desc, valor: v, pagamento: pag, grupo: null, parcela: '', fixaId: '' });
     }
     salvar();
+    if (aviso) mostrarToast(aviso);
     focarCampo('novoValor_' + mid);
 }
 
@@ -363,11 +388,28 @@ export function salvarRapido() {
     else if (parcelas < 1 || parcelas > 48) msg = 'As parcelas vão de 1 a 48.';
     if (msg) { mostrarErro('rapErro', msg); return; }
     S.ultimaCatRapida = cat;
-    if (parcelas > 1) gerarSerie(data, cat, desc, v, pag, parcelas);
-    else mesDoCalendario(ano, mes).lancamentos.push({ id: uid(), data, categoriaId: cat, descricao: desc, valor: v, pagamento: pag, grupo: null, parcela: '', fixaId: '' });
+    const aviso = avisoFatura(data, pag);
+    if (parcelas > 1) {
+        gerarSerie(data, cat, desc, v, pag, parcelas);
+    } else {
+        const c = pag === 'credito' ? dataDeCobranca(data, S.estado.credito) : { ano, mes, data, compra: '' };
+        mesDoCalendario(c.ano, c.mes).lancamentos.push({ id: uid(), data: c.data, compra: c.compra, categoriaId: cat, descricao: desc, valor: v, pagamento: pag, grupo: null, parcela: '', fixaId: '' });
+    }
     fechar('modalRapido');
     salvar();
-    mostrarToast('Lançamento salvo em ' + NOMES_MESES[mes - 1] + ' de ' + ano + '.');
+    mostrarToast(aviso || ('Lançamento salvo em ' + NOMES_MESES[mes - 1] + ' de ' + ano + '.'));
+}
+
+// Reembolso (por exemplo, o amigo devolveu a parte dele): abre o lançamento rápido já como estorno,
+// na mesma categoria, para o gasto continuar só com a sua parte
+export function reembolsar(mid, lid) {
+    const m = achaMes(mid), l = m && m.lancamentos.find(x => x.id === lid);
+    if (!l) return;
+    abrirRapido();
+    document.getElementById('rapDesc').value = 'Reembolso: ' + l.descricao.replace(/\s*\(\d+\/\d+\)\s*$/, '');
+    marcarRadio('rapCat', l.categoriaId);
+    document.getElementById('rapEstorno').checked = true;
+    focarCampo('rapValor');
 }
 
 export function baixar(conteudo, tipo, nome) {
@@ -421,4 +463,55 @@ export function exportarCSV() {
     });
     const csv = '\ufeff' + linhas.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
     baixar(csv, 'text/csv;charset=utf-8', 'Lancamentos_' + hojeISO() + '.csv');
+}
+
+export function adicionarMeta() {
+    const nome = val('metaNome').trim(), alvo = centavos(val('metaAlvo')), inicial = Math.max(0, centavos(val('metaInicial')));
+    const cat = val('metaCat'), prazo = val('metaPrazo');
+    limparErro('erroMeta');
+    let msg = '';
+    if (!nome) msg = 'Dê um nome para a meta.';
+    else if (alvo <= 0) msg = 'Informe o valor da meta.';
+    else if (!S.estado.categorias.some(c => c.id === cat && c.tipo === 'investimento')) msg = 'Escolha uma categoria de investimento.';
+    else if (prazo && !mesValido(prazo)) msg = 'O prazo precisa ser um mês válido.';
+    if (msg) { mostrarErro('erroMeta', msg); return; }
+    S.estado.metas.push({ id: 'g_' + uid(), nome, alvo, inicial, categoriaId: cat, prazo });
+    salvar();
+}
+
+export function editarMeta(id, campo, v) {
+    const m = S.estado.metas.find(x => x.id === id);
+    if (!m) return;
+    if (campo === 'nome') m.nome = String(v).trim() || 'Meta';
+    else if (campo === 'alvo') m.alvo = Math.max(0, centavos(v));
+    else if (campo === 'inicial') m.inicial = Math.max(0, centavos(v));
+    else if (campo === 'prazo') m.prazo = mesValido(v) ? v : '';
+    salvar();
+}
+
+export function removerMeta(id) {
+    const snap = JSON.stringify(S.estado);
+    S.estado.metas = S.estado.metas.filter(x => x.id !== id);
+    salvar();
+    mostrarToast('Meta excluída.', snap);
+}
+
+// Seção aberta na tela do mês (no celular). Só troca o que aparece, sem redesenhar, para não perder o que foi digitado.
+export function abaDoMes(nome) {
+    S.abaMes = nome;
+    document.querySelectorAll('[data-sec]').forEach(el => el.classList.toggle('hidden', el.dataset.sec !== nome));
+    document.querySelectorAll('[data-tab]').forEach(b => {
+        const ativo = b.dataset.tab === nome;
+        b.setAttribute('aria-selected', String(ativo));
+        b.classList.toggle('btn-primario', ativo);
+        b.classList.toggle('btn-secundario', !ativo);
+    });
+}
+
+// Gráfico da Visão Geral: ao tocar em um mês, mostra os valores dele
+export function mostrarValoresMes(id) {
+    const m = achaMes(id), el = document.getElementById('detalheGrafico');
+    if (!m || !el) return;
+    const t = totais(m);
+    el.textContent = `${m.nome}: receitas ${brl(t.receitas)}, gastos ${brl(t.gastos)}, investido ${brl(t.invest)}, sobra ${brl(t.sobra)}.`;
 }

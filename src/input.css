@@ -57,7 +57,6 @@ body { font-variant-numeric: tabular-nums; } /* números com a mesma largura, pa
 .main-pad { padding-bottom: calc(9.5rem + env(safe-area-inset-bottom)); }
 .fab-pos { bottom: calc(5rem + env(safe-area-inset-bottom)); }
 .toast-pos { bottom: calc(9rem + env(safe-area-inset-bottom)); }
-.puxador { left: 0; transition: left 0.3s ease; }
 @media (min-width: 768px) {
   .main-pad { padding-bottom: 6rem; }
   .fab-pos { bottom: 1.5rem; }

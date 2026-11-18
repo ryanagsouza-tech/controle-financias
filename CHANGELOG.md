@@ -1,5 +1,15 @@
 # Histórico de mudanças
 
+## 4.3.0
+- Menu do celular: o botão das três barras passou para a esquerda, e o puxador na borda da tela e os gestos de arrastar foram removidos (conflitavam com o botão voltar do Android).
+- Cartão de crédito configurável (Categorias): a fatura pode vencer no mesmo mês ou no mês seguinte, com dia de vencimento e dia de fechamento opcional. Compras no crédito entram no mês em que a fatura é paga, e a lista mostra o vencimento e a data da compra.
+- Saldos iniciais de investimento e de gastos, além do saldo da conta.
+- Botão Reembolso em cada gasto: registra o valor devolvido (por exemplo, o amigo que pagou a metade) como estorno na mesma categoria, sem virar renda.
+- Metas de economia, com progresso na Visão Geral e quanto guardar por mês até o prazo.
+- Tela do mês em abas no celular (Resumo, Lançamentos, Receitas).
+- Gráfico da Visão Geral: ao tocar em um mês, mostra os valores dele.
+- Versão 7 dos dados (saldos iniciais, cartão e metas). Os dados antigos migram sozinhos.
+
 ## 4.2.0
 - Design do celular: barra de navegação inferior (Início, Mês, Fixas, Mais) e seletor de mês no topo da tela do mês, com setas para o anterior e o seguinte.
 - Todos os controles do celular com no mínimo 44 px de altura, e fonte nunca abaixo de 12 px.

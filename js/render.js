@@ -122,10 +122,6 @@ export function toggleMobileSidebar() {
     const sb = document.getElementById('sidebar');
     sb.classList.toggle('-translate-x-full');
     document.getElementById('sidebarOverlay').classList.toggle('hidden');
-    const fechado = sb.classList.contains('-translate-x-full');
-    const puxador = document.getElementById('puxador');
-    puxador.style.left = fechado ? '0' : '16rem';
-    puxador.setAttribute('aria-expanded', fechado ? 'false' : 'true');
 }
 
 export function trocarAba(id) {

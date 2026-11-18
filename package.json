@@ -1,6 +1,6 @@
 {
   "name": "controle-financeiro",
-  "version": "4.2.0",
+  "version": "4.3.0",
   "private": true,
   "type": "module",
   "description": "Controle financeiro pessoal que roda no navegador e guarda os dados no aparelho.",

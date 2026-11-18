@@ -3,6 +3,7 @@
 export const S = {
     estado: null,                 // dados do usuário (meses, categorias, contas fixas)
     abaAtiva: 'resumo_geral',
+    abaMes: 'resumo',             // seção aberta na tela do mês (no celular): resumo, lancamentos ou receitas
     ultimoMes: null,              // último mês aberto (o botão Mês da barra inferior volta para ele)
     filtros: { texto: '', cat: '', pag: '', ordem: 'recentes' },
     anosAbertos: new Set([new Date().getFullYear()]),
@@ -14,7 +15,5 @@ export const S = {
     dbPromise: null,
     ultimaCatRapida: '',
     pilhaFoco: [],                // elementos que tinham o foco antes de abrir cada janela
-    toqueX: null,
-    toqueY: null,
     renderizar: () => {}          // main.js coloca aqui a função que redesenha a tela
 };

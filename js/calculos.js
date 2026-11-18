@@ -26,7 +26,7 @@ export function mesesCronologicos() {
 // Saldo e patrimônio acumulados seguem a ordem cronológica (meses sem data vão para o fim).
 // A ordem da barra lateral é só visual e não muda as contas.
 export function acumulados() {
-    let conta = num(S.estado.saldoInicial), inv = 0;
+    let conta = num(S.estado.saldoInicial), inv = num(S.estado.saldoInicialInvest);
     const out = {};
     mesesCronologicos().forEach(m => {
         const t = totais(m);
@@ -127,16 +127,47 @@ export function mesDoCalendario(ano, mes) {
 // Compra parcelada no crédito: divide o total em centavos (a sobra vai para a 1ª parcela) e espalha pelos meses seguintes.
 export function gerarSerie(data, catId, desc, valor, pagamento, qtd) {
     const grupo = uid();
-    const dia = parseInt(data.slice(8, 10));
-    const base = parseInt(data.slice(0, 4)) * 12 + parseInt(data.slice(5, 7)) - 1;
+    // No crédito, a 1ª parcela cai na fatura que o cartão da pessoa define, e as outras nos meses seguintes
+    const cobr = pagamento === 'credito' ? dataDeCobranca(data, S.estado.credito) : null;
+    const dia = parseInt((cobr ? cobr.data : data).slice(8, 10));
+    const base = cobr ? cobr.ano * 12 + cobr.mes - 1 : parseInt(data.slice(0, 4)) * 12 + parseInt(data.slice(5, 7)) - 1;
     const parcela = Math.floor(valor / qtd);
     const resto = valor - parcela * qtd;
     for (let k = 0; k < qtd; k++) {
         const t = base + k, ano = Math.floor(t / 12), mes = (t % 12) + 1;
         const alvo = mesDoCalendario(ano, mes);
         const d = ano + '-' + pad(mes) + '-' + pad(Math.min(dia, new Date(ano, mes, 0).getDate()));
-        alvo.lancamentos.push({ id: uid(), data: d, categoriaId: catId, descricao: desc + ' (' + (k + 1) + '/' + qtd + ')', valor: parcela + (k === 0 ? resto : 0), pagamento, grupo, parcela: (k + 1) + '/' + qtd });
+        alvo.lancamentos.push({ id: uid(), data: d, compra: cobr && cobr.compra ? data : '', categoriaId: catId, descricao: desc + ' (' + (k + 1) + '/' + qtd + ')', valor: parcela + (k === 0 ? resto : 0), pagamento, grupo, parcela: (k + 1) + '/' + qtd });
     }
+}
+
+// Mês e dia em que uma compra no crédito é cobrada, conforme o jeito que o cartão da pessoa funciona.
+// Sem vencimento no mês seguinte e sem fechamento, vale a própria data da compra (comportamento antigo).
+export function dataDeCobranca(compra, cfg) {
+    const ano = parseInt(compra.slice(0, 4)), mes = parseInt(compra.slice(5, 7)), dia = parseInt(compra.slice(8, 10));
+    if (cfg.vence !== 'seguinte' && !(cfg.diaFechamento > 0)) return { ano, mes, data: compra, compra: '' };
+    let k = ano * 12 + (mes - 1);
+    if (cfg.diaFechamento > 0 && dia > cfg.diaFechamento) k += 1; // comprou depois do fechamento: entra na fatura seguinte
+    if (cfg.vence === 'seguinte') k += 1;                          // a fatura vence no mês seguinte
+    const a = Math.floor(k / 12), m = (k % 12) + 1;
+    return { ano: a, mes: m, data: diaDoMes(a, m, cfg.diaVencimento), compra };
+}
+
+// Quanto já foi guardado numa meta (só até o mês atual) e quanto falta
+export function progressoMeta(meta) {
+    const agora = hojeChave();
+    let guardado = num(meta.inicial);
+    S.estado.meses.forEach(m => {
+        if (m.ano && m.mes && m.ano * 12 + m.mes > agora) return;
+        m.lancamentos.forEach(l => { if (l.categoriaId === meta.categoriaId) guardado += num(l.valor); });
+    });
+    const alvo = num(meta.alvo), falta = Math.max(0, alvo - guardado);
+    let mesesRestantes = null, porMes = null;
+    if (meta.prazo) {
+        mesesRestantes = Math.max(0, chaveMes(meta.prazo) - agora + 1);
+        porMes = mesesRestantes > 0 ? Math.ceil(falta / mesesRestantes) : falta;
+    }
+    return { guardado, alvo, falta, pct: alvo > 0 ? Math.min(100, guardado / alvo * 100) : 0, concluida: alvo > 0 && guardado >= alvo, mesesRestantes, porMes };
 }
 
 export function posicaoCronologica(ano, mes) {

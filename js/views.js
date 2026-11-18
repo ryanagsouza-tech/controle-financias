@@ -1,8 +1,8 @@
 // Telas: funções que devolvem texto HTML. Nenhuma delas mexe no DOM nem usa JavaScript dentro do HTML.
-import { ABREV_MESES, CATEGORIAS_SUGERIDAS, FORMAS_PAGAMENTO, ICONES, LIXEIRA, VERSAO_APP, nomePag } from './constantes.js';
-import { brl, curto, dataBR, esc, ev, hojeChave, hojeISO, mesAtualISO, num, reais, semAcento } from './util.js';
+import { ABREV_MESES, CATEGORIAS_SUGERIDAS, FORMAS_PAGAMENTO, ICONES, LIXEIRA, NOMES_MESES, VERSAO_APP, nomePag } from './constantes.js';
+import { brl, curto, dataBR, esc, ev, hojeChave, hojeISO, mesAtualISO, num, pad, reais, semAcento } from './util.js';
 import { S } from './estado.js';
-import { acumulados, catDoItem, dataPadrao, gastosPorCategoria, limitesMes, mesesCronologicos, rotuloTri, totais, triDe } from './calculos.js';
+import { acumulados, catDoItem, catPorId, dataDeCobranca, dataPadrao, gastosPorCategoria, limitesMes, mesesCronologicos, progressoMeta, rotuloTri, totais, triDe } from './calculos.js';
 import { lerTema } from './tema.js';
 
 export function card(rotulo, valor, cor, sub, fundo) {
@@ -27,10 +27,11 @@ export function graficoMensal(acc) {
             return `<rect x="${x0 + k * 14}" y="${base - h}" width="12" height="${h}" rx="2" fill="${cor}"><title>${esc(m.nome)} - ${nome}: ${brl(v)}</title></rect>`;
         };
         const rot = m.ano ? ABREV_MESES[m.mes - 1] + '/' + String(m.ano).slice(2) : esc(m.nome.slice(0, 5));
-        return mk(t.receitas, 0, '#10b981', 'Receitas') + mk(t.gastos, 1, '#f43f5e', 'Gastos') + mk(t.invest, 2, '#06b6d4', 'Investido')
-            + `<text x="${x0 + 21}" y="${base + 16}" text-anchor="middle" font-size="10" fill="#64748b">${rot}</text>`;
+        return `<g ${ev('click', 'mostrarValoresMes', m.id)} tabindex="0" role="button" aria-label="Ver valores de ${esc(m.nome)}" class="cursor-pointer"><rect x="${x0 - 4}" y="0" width="${larg - 4}" height="${base + 24}" fill="transparent"/>`
+            + mk(t.receitas, 0, '#10b981', 'Receitas') + mk(t.gastos, 1, '#f43f5e', 'Gastos') + mk(t.invest, 2, '#06b6d4', 'Investido')
+            + `<text x="${x0 + 21}" y="${base + 16}" text-anchor="middle" font-size="12" fill="#64748b">${rot}</text></g>`;
     }).join('');
-    return `<div class="overflow-x-auto"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Receitas, gastos e investimentos por mês">
+    return `<div class="overflow-x-auto"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="group" aria-label="Receitas, gastos e investimentos por mês. Toque em um mês para ver os valores.">
         <line x1="0" y1="${base}" x2="${W}" y2="${base}" stroke="#94a3b8" stroke-opacity="0.5"/>${barras}</svg></div>`;
 }
 
@@ -80,13 +81,14 @@ export function viewGeralCorpo() {
     let R = 0, G = 0, I = 0;
     S.estado.meses.forEach(m => { R += acc[m.id].receitas; G += acc[m.id].gastos; I += acc[m.id].invest; });
     const si = num(S.estado.saldoInicial);
+    const gi = num(S.estado.gastoInicial), ii = num(S.estado.saldoInicialInvest);
     // Saldo e patrimônio contam só até o mês atual: parcelas e contas fixas de meses futuros ainda não saíram da conta
     const agora = hojeChave();
     const ate = mesesCronologicos().filter(m => m.ano && m.mes && m.ano * 12 + m.mes <= agora);
     const ult = ate.length ? acc[ate[ate.length - 1].id] : null;
     const semData = S.estado.meses.filter(m => !(m.ano && m.mes)).map(m => totais(m));
     const conta = (ult ? ult.conta : si) + semData.reduce((a, t) => a + t.sobra, 0);
-    const investido = (ult ? ult.invAcum : 0) + semData.reduce((a, t) => a + t.invest, 0);
+    const investido = (ult ? ult.invAcum : ii) + semData.reduce((a, t) => a + t.invest, 0);
     const porCat = gastosPorCategoria(S.estado.meses);
     return `
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
@@ -95,11 +97,13 @@ export function viewGeralCorpo() {
         </div>
         <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
             ${card('Receitas', brl(R), 'text-emerald-700')}
-            ${card('Gastos', brl(G), 'text-rose-600')}
-            ${card('Investido', brl(I), 'text-cyan-700')}
+            ${card('Gastos', brl(G + gi), 'text-rose-600', gi > 0 ? 'inclui ' + brl(gi) + ' de antes do app' : '')}
+            ${card('Investido', brl(I + ii), 'text-cyan-700', ii > 0 ? 'inclui ' + brl(ii) + ' de antes do app' : '')}
             ${card('Saldo na conta', brl(conta), conta >= 0 ? 'text-emerald-900' : 'text-rose-600', 'até o mês atual' + (si !== 0 ? ', com saldo inicial de ' + brl(si) : ''), 'bg-emerald-50 border-emerald-200')}
             ${card('Patrimônio', brl(conta + investido), 'text-sky-900', 'conta + investimentos, até o mês atual', 'bg-sky-50 border-sky-200')}
         </div>
+        ${blocoMetasProgresso()}
+
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <h3 class="font-bold text-slate-900">Evolução mensal</h3>
             <div class="flex flex-wrap gap-4 text-xs text-slate-500">
@@ -108,6 +112,7 @@ export function viewGeralCorpo() {
                 <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-cyan-500"></span>Investido</span>
             </div>
             ${graficoMensal(acc)}
+            <p id="detalheGrafico" aria-live="polite" class="text-sm text-slate-600">Toque em um mês do gráfico para ver os valores.</p>
         </div>
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <h3 class="font-bold text-slate-900">Gastos por categoria no período</h3>
@@ -278,8 +283,109 @@ export function viewFixas() {
 }
 
 /* ---- Configurações: categorias, orçamento, saldo inicial ---- */
+// Cartão de crédito: cada pessoa tem um jeito (fatura que vence no mês seguinte, dia de fechamento...)
+export function blocoCartao() {
+    const c = S.estado.credito;
+    const campo = 'bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-medium';
+    const rot = 'block text-sm font-bold text-slate-600 mb-1';
+    const hoje = new Date(), ano = hoje.getFullYear(), mes = hoje.getMonth() + 1;
+    const ex = dataDeCobranca(`${ano}-${pad(mes)}-20`, c);
+    const exemplo = ex.compra
+        ? `Exemplo: uma compra no crédito em 20 de ${NOMES_MESES[mes - 1]} entra na fatura de ${NOMES_MESES[ex.mes - 1]} e vence em ${dataBR(ex.data)}.`
+        : 'Exemplo: a compra no crédito entra no mesmo mês em que foi feita.';
+    return `
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div>
+                <h3 class="font-bold text-slate-900">Cartão de crédito</h3>
+                <p class="text-xs text-slate-500">Configure como a sua fatura funciona. As compras no crédito passam a entrar no mês em que a fatura é paga, e não no mês da compra.</p>
+            </div>
+            <div>
+                <label for="creditoVence" class="${rot}">A fatura vence</label>
+                <select id="creditoVence" ${ev('change', 'definirCredito', 'vence')} class="${campo} w-full sm:w-auto">
+                    <option value="mesmo" ${c.vence === 'mesmo' ? 'selected' : ''}>No mesmo mês da compra</option>
+                    <option value="seguinte" ${c.vence === 'seguinte' ? 'selected' : ''}>No mês seguinte</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3 max-w-sm">
+                <div>
+                    <label for="creditoDia" class="${rot}">Dia do vencimento</label>
+                    <input type="number" min="1" max="31" inputmode="numeric" id="creditoDia" value="${c.diaVencimento}" ${ev('change', 'definirCredito', 'diaVencimento')} class="${campo} w-full">
+                </div>
+                <div>
+                    <label for="creditoFecha" class="${rot}">Dia de fechamento</label>
+                    <input type="number" min="0" max="31" inputmode="numeric" id="creditoFecha" value="${c.diaFechamento || ''}" placeholder="0" ${ev('change', 'definirCredito', 'diaFechamento')} class="${campo} w-full">
+                </div>
+            </div>
+            <p class="text-xs text-slate-500">O fechamento é opcional (deixe vazio para não usar). Compras depois desse dia entram na fatura seguinte.</p>
+            <p class="text-sm font-semibold text-slate-700">${exemplo}</p>
+        </div>`;
+}
+
+// Metas de economia: cadastro e edição
+export function blocoMetas() {
+    const campo = 'bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-medium w-full';
+    const rot = 'block text-xs font-bold text-slate-600 mb-1';
+    const invest = S.estado.categorias.filter(c => c.tipo === 'investimento');
+    return `
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div>
+                <h3 class="font-bold text-slate-900">Metas de economia</h3>
+                <p class="text-xs text-slate-500">Cada meta acompanha uma categoria de investimento até um valor. O progresso aparece na Visão Geral.</p>
+            </div>
+            ${invest.length ? `
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div class="col-span-2 md:col-span-1"><label for="metaNome" class="${rot}">Nome</label><input type="text" id="metaNome" placeholder="Ex: Viagem" class="${campo}"></div>
+                <div><label for="metaAlvo" class="${rot}">Valor da meta (R$)</label><input type="number" step="0.01" inputmode="decimal" id="metaAlvo" placeholder="0.00" class="${campo} text-right"></div>
+                <div><label for="metaInicial" class="${rot}">Já guardado (R$)</label><input type="number" step="0.01" inputmode="decimal" id="metaInicial" placeholder="0.00" class="${campo} text-right"></div>
+                <div><label for="metaCat" class="${rot}">Categoria</label><select id="metaCat" class="${campo}">${invest.map(c => `<option value="${c.id}">${esc(curto(c.nome))}</option>`).join('')}</select></div>
+                <div><label for="metaPrazo" class="${rot}">Prazo (opcional)</label><input type="month" id="metaPrazo" class="${campo}"></div>
+                <div class="flex items-end"><button ${ev('click', 'adicionarMeta')} class="btn btn-primario w-full">+ Adicionar meta</button></div>
+            </div>
+            <p id="erroMeta" role="alert" class="hidden text-sm font-semibold text-rose-700"></p>` : '<p class="text-sm text-slate-500">Crie uma categoria de investimento em Categorias para usar metas.</p>'}
+            <div class="space-y-3">
+                ${S.estado.metas.map(m => `
+                <div class="border border-slate-200 rounded-xl p-3 space-y-2">
+                    <div class="flex gap-2">
+                        <input type="text" value="${esc(m.nome)}" aria-label="Nome da meta" ${ev('change', 'editarMeta', m.id, 'nome')} class="${campo} flex-1 min-w-0">
+                        <button ${ev('click', 'removerMeta', m.id)} aria-label="Excluir meta" class="btn-icone btn-perigo-suave">${LIXEIRA}</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div><label class="${rot}">Valor (R$)</label><input type="number" step="0.01" inputmode="decimal" value="${reais(m.alvo)}" ${ev('change', 'editarMeta', m.id, 'alvo')} class="${campo} text-right"></div>
+                        <div><label class="${rot}">Já guardado</label><input type="number" step="0.01" inputmode="decimal" value="${m.inicial ? reais(m.inicial) : ''}" ${ev('change', 'editarMeta', m.id, 'inicial')} class="${campo} text-right"></div>
+                        <div><label class="${rot}">Prazo</label><input type="month" value="${m.prazo}" ${ev('change', 'editarMeta', m.id, 'prazo')} class="${campo}"></div>
+                    </div>
+                </div>`).join('')}
+            </div>
+        </div>`;
+}
+
+// Progresso das metas na Visão Geral
+export function blocoMetasProgresso() {
+    if (!S.estado.metas.length) return '';
+    return `
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="font-bold text-slate-900">Metas de economia</h3>
+            ${S.estado.metas.map(m => {
+                const p = progressoMeta(m), cat = catPorId(m.categoriaId);
+                let linha = p.concluida ? 'Meta atingida' : 'Faltam ' + brl(p.falta);
+                if (!p.concluida && m.prazo) {
+                    const [pa, pm] = m.prazo.split('-').map(Number);
+                    linha += p.mesesRestantes > 0 ? ' · ' + brl(p.porMes) + ' por mês até ' + NOMES_MESES[pm - 1].slice(0, 3).toLowerCase() + '/' + pa : ' · prazo vencido';
+                }
+                return `<div>
+                    <div class="flex justify-between gap-2 text-sm font-semibold mb-1">
+                        <span class="text-slate-700 truncate">${esc(m.nome)}</span>
+                        <span class="text-slate-900 font-bold shrink-0">${brl(p.guardado)} <span class="text-slate-500 font-normal">de ${brl(p.alvo)} (${p.pct.toFixed(0)}%)</span></span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden"><div class="h-2.5 rounded-full" data-larg="${p.pct}" data-bg="${cat ? cat.cor : '#0369a1'}"></div></div>
+                    <p class="text-xs mt-1 ${p.concluida ? 'text-emerald-700 font-semibold' : 'text-slate-500'}">${linha}</p>
+                </div>`;
+            }).join('')}
+        </div>`;
+}
+
 export function viewConfig() {
-    return viewConfigCorpo() + blocoPontos() + blocoAparencia();
+    return viewConfigCorpo() + blocoCartao() + blocoMetas() + blocoPontos() + blocoAparencia();
 }
 
 export function blocoPontos() {
@@ -314,10 +420,26 @@ export function viewConfigCorpo() {
             <h2 class="text-xl font-bold text-slate-900">Categorias e Orçamento</h2>
             <p class="text-xs text-slate-500">Edite os nomes e cores, defina um limite mensal por categoria (0 significa sem limite) e informe o saldo que você já tinha na conta antes do primeiro mês.</p>
         </div>
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-2">
-            <label for="saldoInicial" class="block text-sm font-bold text-slate-900">Saldo inicial da conta (R$)</label>
-            <input type="number" step="0.01" inputmode="decimal" id="saldoInicial" value="${S.estado.saldoInicial ? reais(S.estado.saldoInicial) : ''}" placeholder="0.00" ${ev('change', 'definirSaldoInicial')} class="${campo} w-48 text-right">
-            <p class="text-xs text-slate-500">Entra no saldo acumulado a partir do primeiro mês da lista.</p>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div>
+                <h3 class="font-bold text-slate-900">Saldos iniciais</h3>
+                <p class="text-xs text-slate-500">Para quem já começa com dinheiro na conta, investido ou gastos de antes do app. Entram a partir do primeiro mês.</p>
+            </div>
+            <div>
+                <label for="saldoInicial" class="block text-sm font-bold text-slate-600 mb-1">Saldo na conta (R$)</label>
+                <input type="number" step="0.01" inputmode="decimal" id="saldoInicial" value="${S.estado.saldoInicial ? reais(S.estado.saldoInicial) : ''}" placeholder="0.00" ${ev('change', 'definirSaldoInicial')} class="${campo} w-48 text-right">
+                <p class="text-xs text-slate-500 mt-1">O que você tem hoje na conta.</p>
+            </div>
+            <div>
+                <label for="saldoInicialInvest" class="block text-sm font-bold text-slate-600 mb-1">Já investido (R$)</label>
+                <input type="number" step="0.01" inputmode="decimal" id="saldoInicialInvest" value="${S.estado.saldoInicialInvest ? reais(S.estado.saldoInicialInvest) : ''}" placeholder="0.00" ${ev('change', 'definirSaldoInicialInvest')} class="${campo} w-48 text-right">
+                <p class="text-xs text-slate-500 mt-1">Soma ao total investido e ao patrimônio.</p>
+            </div>
+            <div>
+                <label for="gastoInicial" class="block text-sm font-bold text-slate-600 mb-1">Gastos de antes do app (R$)</label>
+                <input type="number" step="0.01" inputmode="decimal" id="gastoInicial" value="${S.estado.gastoInicial ? reais(S.estado.gastoInicial) : ''}" placeholder="0.00" ${ev('change', 'definirGastoInicial')} class="${campo} w-48 text-right">
+                <p class="text-xs text-slate-500 mt-1">Aparece no total de gastos da Visão Geral. Não diminui o saldo da conta, que já é o valor de hoje.</p>
+            </div>
         </div>
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -412,28 +534,11 @@ export function viewMes(mes) {
             </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-            <h3 class="font-bold text-slate-900">Receitas do mês</h3>
-            ${mes.receitas.length ? mes.receitas.map(r => `
-            <div class="flex items-center gap-2">
-                <input type="text" value="${esc(r.descricao)}" aria-label="Descrição da receita" ${ev('change', 'editarReceita', mes.id, r.id, 'descricao')} class="${campo} flex-1 min-w-0">
-                <input type="number" step="0.01" inputmode="decimal" value="${reais(r.valor)}" aria-label="Valor da receita" ${ev('change', 'editarReceita', mes.id, r.id, 'valor')} class="${campo} w-28 text-right">
-                <button ${ev('click', 'removerReceita', mes.id, r.id)} aria-label="Remover receita" class="btn-icone btn-perigo-suave">${LIXEIRA}</button>
-            </div>`).join('') : '<p class="text-sm text-slate-500 italic">Nenhuma receita neste mês ainda.</p>'}
-            <p id="erroRec_${mes.id}" role="alert" class="hidden text-sm font-semibold text-rose-700"></p>
-            <div class="flex flex-wrap items-end gap-2 pt-2 border-t border-slate-100">
-                <div class="flex-1 min-w-[8rem]">
-                    <label for="recDesc_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Nova receita</label>
-                    <input type="text" id="recDesc_${mes.id}" ${ev('enter', 'focarCampo', 'recVal_' + mes.id)} placeholder="Ex: Salário, Extra, 13º" class="${campo} w-full">
-                </div>
-                <div class="w-28">
-                    <label for="recVal_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Valor (R$)</label>
-                    <input type="number" step="0.01" inputmode="decimal" id="recVal_${mes.id}" ${ev('enter', 'adicionarReceita', mes.id)} placeholder="0.00" class="${campo} w-full text-right">
-                </div>
-                <button ${ev('click', 'adicionarReceita', mes.id)} class="btn btn-primario">+ Adicionar</button>
-            </div>
+        <div role="tablist" aria-label="Seções do mês" class="md:hidden grid grid-cols-3 gap-2">
+            ${[['resumo', 'Resumo'], ['lancamentos', 'Lançamentos'], ['receitas', 'Receitas']].map(([k, r]) => `<button role="tab" aria-selected="${S.abaMes === k}" data-tab="${k}" ${ev('click', 'abaDoMes', k)} class="btn ${S.abaMes === k ? 'btn-primario' : 'btn-secundario'}">${r}</button>`).join('')}
         </div>
 
+        <div data-sec="resumo" class="${S.abaMes === 'resumo' ? '' : 'hidden'} md:block space-y-6">
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
             <div>
                 <h3 class="font-bold text-slate-900">Gastos e orçamento por categoria</h3>
@@ -454,7 +559,9 @@ export function viewMes(mes) {
             </div>
         </div>
         ${resumoPagamento(mes)}
+        </div>
 
+        <div data-sec="lancamentos" class="${S.abaMes === 'lancamentos' ? '' : 'hidden'} md:block space-y-6">
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
             <h3 class="font-bold text-slate-900">Novo lançamento</h3>
             <div>
@@ -511,6 +618,31 @@ export function viewMes(mes) {
                 </select>
             </div>
             <div id="listaLanc">${renderLista(mes)}</div>
+        </div>
+        </div>
+
+        <div data-sec="receitas" class="${S.abaMes === 'receitas' ? '' : 'hidden'} md:block space-y-6">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+            <h3 class="font-bold text-slate-900">Receitas do mês</h3>
+            ${mes.receitas.length ? mes.receitas.map(r => `
+            <div class="flex items-center gap-2">
+                <input type="text" value="${esc(r.descricao)}" aria-label="Descrição da receita" ${ev('change', 'editarReceita', mes.id, r.id, 'descricao')} class="${campo} flex-1 min-w-0">
+                <input type="number" step="0.01" inputmode="decimal" value="${reais(r.valor)}" aria-label="Valor da receita" ${ev('change', 'editarReceita', mes.id, r.id, 'valor')} class="${campo} w-28 text-right">
+                <button ${ev('click', 'removerReceita', mes.id, r.id)} aria-label="Remover receita" class="btn-icone btn-perigo-suave">${LIXEIRA}</button>
+            </div>`).join('') : '<p class="text-sm text-slate-500 italic">Nenhuma receita neste mês ainda.</p>'}
+            <p id="erroRec_${mes.id}" role="alert" class="hidden text-sm font-semibold text-rose-700"></p>
+            <div class="flex flex-wrap items-end gap-2 pt-2 border-t border-slate-100">
+                <div class="flex-1 min-w-[8rem]">
+                    <label for="recDesc_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Nova receita</label>
+                    <input type="text" id="recDesc_${mes.id}" ${ev('enter', 'focarCampo', 'recVal_' + mes.id)} placeholder="Ex: Salário, Extra, 13º" class="${campo} w-full">
+                </div>
+                <div class="w-28">
+                    <label for="recVal_${mes.id}" class="block text-xs font-bold text-slate-500 mb-1">Valor (R$)</label>
+                    <input type="number" step="0.01" inputmode="decimal" id="recVal_${mes.id}" ${ev('enter', 'adicionarReceita', mes.id)} placeholder="0.00" class="${campo} w-full text-right">
+                </div>
+                <button ${ev('click', 'adicionarReceita', mes.id)} class="btn btn-primario">+ Adicionar</button>
+            </div>
+        </div>
         </div>`;
 }
 
@@ -535,14 +667,18 @@ export function renderLista(mes) {
         <p class="text-xs text-slate-500">${itens.length} ${itens.length === 1 ? 'lançamento' : 'lançamentos'}, total ${brl(soma)}</p>
         <div>${itens.map(l => {
             const c = catDoItem(l), inv = c.tipo === 'investimento';
+            const reembolsavel = !inv && num(l.valor) > 0;
             return `
-            <div class="flex items-center justify-between gap-3 py-3 border-b border-slate-100 last:border-0">
-                <div class="min-w-0">
-                    <p class="text-sm font-semibold text-slate-800 truncate">${esc(l.descricao)}</p>
-                    <p class="text-xs text-slate-500 flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full shrink-0" data-bg="${c.cor}"></span><span class="truncate">${esc(curto(c.nome))} · ${dataBR(l.data)}${l.pagamento ? ' · ' + nomePag(l.pagamento) : ''}${l.fixaId ? ' · Conta fixa' : ''}</span></p>
+            <div class="py-3 border-b border-slate-100 last:border-0">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-slate-800 truncate">${esc(l.descricao)}</p>
+                        <p class="text-xs text-slate-500 flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full shrink-0" data-bg="${c.cor}"></span><span class="truncate">${esc(curto(c.nome))} · ${l.compra ? 'vence ' + dataBR(l.data) + ' · compra ' + dataBR(l.compra) : dataBR(l.data)}${l.pagamento ? ' · ' + nomePag(l.pagamento) : ''}${l.fixaId ? ' · Conta fixa' : ''}</span></p>
+                    </div>
+                    <span class="text-sm font-bold shrink-0 ${inv ? 'text-cyan-700' : num(l.valor) < 0 ? 'text-emerald-700' : 'text-rose-600'}">${inv ? '↗ ' + brl(l.valor) : (num(l.valor) < 0 ? '+' : '-') + brl(Math.abs(num(l.valor)))}</span>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-sm font-bold ${inv ? 'text-cyan-700' : num(l.valor) < 0 ? 'text-emerald-700' : 'text-rose-600'}">${inv ? '↗ ' + brl(l.valor) : (num(l.valor) < 0 ? '+' : '-') + brl(Math.abs(num(l.valor)))}</span>
+                <div class="flex justify-end gap-2 mt-2">
+                    ${reembolsavel ? `<button ${ev('click', 'reembolsar', mes.id, l.id)} class="btn btn-secundario btn-sm">Reembolso</button>` : ''}
                     <button ${ev('click', 'abrirEdicao', mes.id, l.id)} class="btn btn-secundario btn-sm">Editar</button>
                     <button ${ev('click', 'removerLanc', mes.id, l.id)} aria-label="Excluir lançamento" class="btn-icone btn-perigo-suave">${LIXEIRA}</button>
                 </div>

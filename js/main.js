@@ -5,7 +5,7 @@ import { aplicarFixasTodos, garantirMesAtual } from './calculos.js';
 import { carregar, lerDB, obterCanal, persistir, salvarSnapshot } from './armazenamento.js';
 import { aplicarTema } from './tema.js';
 import { fechar, fecharDialogo, janelaAberta, mostrarToast, prenderFoco } from './ui.js';
-import { renderizar, toggleMobileSidebar } from './render.js';
+import { renderizar } from './render.js';
 import { abrirRapido } from './acoes.js';
 import { instalar } from './eventos.js';
 import { ACOES } from './mapa.js';
@@ -17,21 +17,6 @@ function registrarServiceWorker() {
         if (tinhaControlador) mostrarToast('Nova versão instalada. Feche e abra o app para usá-la.');
     });
     navigator.serviceWorker.register('sw.js').catch(() => {});
-}
-
-// Gestos no celular: arrastar da borda esquerda abre o menu, arrastar para a esquerda fecha
-function configurarGestos() {
-    document.addEventListener('touchstart', e => { const t = e.touches[0]; S.toqueX = t.clientX; S.toqueY = t.clientY; }, { passive: true });
-    document.addEventListener('touchend', e => {
-        if (S.toqueX === null || window.innerWidth >= 768) return;
-        const t = e.changedTouches[0], dx = t.clientX - S.toqueX, dy = Math.abs(t.clientY - S.toqueY);
-        const fechado = document.getElementById('sidebar').classList.contains('-translate-x-full');
-        if (dy < 60) {
-            if (fechado && S.toqueX < 24 && dx > 60) toggleMobileSidebar();
-            else if (!fechado && dx < -60) toggleMobileSidebar();
-        }
-        S.toqueX = null;
-    }, { passive: true });
 }
 
 // Esc fecha a janela aberta e o Tab fica preso dentro dela
@@ -51,7 +36,6 @@ async function iniciar() {
     S.renderizar = renderizar;
     instalar(document, ACOES);
     configurarTeclado();
-    configurarGestos();
     aplicarTema();
     if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', aplicarTema);
     S.estado = await carregar();
