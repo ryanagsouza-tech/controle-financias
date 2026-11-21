@@ -1643,6 +1643,16 @@ body {
   }
 }
 
+/* Quem pede menos movimento no aparelho não vê animações */
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Acessibilidade: contorno visível para quem usa teclado e contraste mínimo nos textos de apoio */
 
 :focus-visible {

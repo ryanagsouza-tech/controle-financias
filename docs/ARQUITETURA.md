@@ -16,7 +16,8 @@ constantes  <  util  <  estado  <  dados  <  calculos  <  armazenamento
 | `constantes`, `util`, `dados`, `calculos` | Não | Regras puras. São as mais testadas |
 | `armazenamento` | IndexedDB | Grava, lê e guarda pontos de restauração |
 | `views` | Não | Devolve texto HTML, nunca mexe no DOM |
-| `render`, `ui`, `acoes`, `main` | Sim | Desenham, abrem janelas e reagem a toques |
+| `render`, `ui`, `acoes`, `inicio` | Sim | Desenham, abrem janelas e reagem a toques |
+| `main` | Sim | Só liga `inicio.js` à página |
 
 ## Fluxo de um toque
 
@@ -51,3 +52,12 @@ constantes  <  util  <  estado  <  dados  <  calculos  <  armazenamento
 ## Reembolso
 
 Um reembolso é um lançamento negativo (estorno) na mesma categoria. Assim o gasto líquido fica só com a parte da pessoa, o saldo da conta continua exato no dia em que o dinheiro entra e nada é contado como renda.
+
+## Acessibilidade no teclado
+
+O despachante (`js/eventos.js`) trata três casos além do clique: Enter nos campos com `data-enter`, Enter e Espaço em itens com `role="button"` que não são botões nativos (os meses do gráfico) e as setas, Home e End nas abas (`role="tab"`). Janelas prendem o Tab dentro delas (`prenderFoco` em `js/ui.js`) e Esc as fecha.
+
+## Testes
+
+- `npm test` roda todos os arquivos de `tests/`. `tests/fluxo.test.mjs` sobe o app inteiro num navegador simulado e usa a tela como uma pessoa usaria.
+- `docs/VERIFICACAO_CELULAR.md` lista o que só um aparelho de verdade confirma.

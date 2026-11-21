@@ -1,6 +1,6 @@
 {
   "name": "controle-financeiro",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "private": true,
   "type": "module",
   "description": "Controle financeiro pessoal que roda no navegador e guarda os dados no aparelho.",
@@ -16,6 +16,8 @@
     "eslint": "^9.0.0",
     "@eslint/js": "^9.0.0",
     "globals": "^15.0.0",
-    "fake-indexeddb": "^6.0.0"
+    "fake-indexeddb": "^6.0.0",
+    "jsdom": "^24.0.0",
+    "esbuild": "^0.23.0"
   }
 }

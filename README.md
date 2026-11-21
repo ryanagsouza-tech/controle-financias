@@ -64,7 +64,7 @@ Os dados são gravados no IndexedDB do próprio navegador. Nada é enviado para 
 
 Depois de instalar as dependências (`npm install`), os comandos são:
 
-- `npm test` roda os testes automáticos (regras de conta, segurança, eventos, armazenamento, ações e telas).
+- `npm test` roda os testes automáticos (regras de conta, segurança, acessibilidade, eventos, armazenamento, ações, telas e a página inteira).
 - `npm run lint` procura erros no código e nos testes.
 - `npm run check` roda o lint e os testes de uma vez.
 - `npm run css` gera o `style.css`.
@@ -77,7 +77,7 @@ Para editar `index.html` ou os arquivos da pasta `js` basta abrir a pasta no VS 
 Se você usar uma classe nova do Tailwind no HTML ou no JavaScript, gere o CSS de novo:
 
 ```
-npm install
+npm ci
 npm run css
 ```
 
@@ -106,3 +106,4 @@ MIT. Veja o arquivo `LICENSE`.
 - `docs/ARQUITETURA.md` explica as camadas e o fluxo de um toque.
 - `SECURITY.md` descreve como o app protege seus dados.
 - `CHANGELOG.md` lista o que mudou em cada versão.
+- `docs/VERIFICACAO_CELULAR.md` é um roteiro para conferir o app num celular de verdade.

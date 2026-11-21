@@ -74,7 +74,7 @@ test('todo botão das telas usa um dos 3 níveis (btn ou btn-icone)', () => {
     const mes = mesDoCalendario(A, M);
     mes.lancamentos.push({ id: 'l', data: `${A}-${String(M).padStart(2, '0')}-02`, categoriaId: 'Lazer', descricao: 'x', valor: 100, pagamento: '', grupo: null, parcela: '', fixaId: '' });
     S.estado.contasFixas.push({ id: 'f', descricao: 'Aluguel', valor: 100, categoriaId: 'Lazer', tipo: 'gasto', dia: 5, inicio: `${A}-01`, fim: '', pagamento: '' });
-    const telas = [views.viewGeral(), views.viewMes(mes), views.viewFixas(), views.viewConfig(), views.renderLista(mes), views.avisoBackup()];
+    const telas = [views.viewGeral(), views.viewMes(mes), views.viewFixas(), views.viewConfig(), views.viewAjustes(), views.renderLista(mes), views.avisoBackup()];
     for (const html of telas) {
         for (const m of html.matchAll(/<button\b([^>]*)>/g)) {
             const cls = (m[1].match(/class="([^"]*)"/) || ['', ''])[1].split(/\s+/);

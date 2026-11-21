@@ -1,5 +1,14 @@
 # Histórico de mudanças
 
+## 4.4.0
+- Categorias e Configurações viram duas telas: Categorias só com categorias e orçamento, e Configurações com saldos iniciais, cartão de crédito, metas, pontos de restauração e aparência.
+- Acessibilidade: as abas do mês ligam cada aba ao seu painel e respondem às setas, Home e End; os meses do gráfico respondem a Enter e Espaço; o app respeita a preferência de movimento reduzido.
+- CSV com a coluna da data da compra.
+- `main.js` ficou só como porta de entrada e o início do app foi para `js/inicio.js`, que tem testes.
+- Teste da página inteira (jsdom e esbuild), testes do tema, do início do app, da exportação e importação, das sugestões e da navegação.
+- `package-lock.json` para as mesmas versões das ferramentas em qualquer instalação, e CI com `npm ci`.
+- Roteiro de verificação no celular em `docs/VERIFICACAO_CELULAR.md`.
+
 ## 4.3.0
 - Menu do celular: o botão das três barras passou para a esquerda, e o puxador na borda da tela e os gestos de arrastar foram removidos (conflitavam com o botão voltar do Android).
 - Cartão de crédito configurável (Categorias): a fatura pode vencer no mesmo mês ou no mês seguinte, com dia de vencimento e dia de fechamento opcional. Compras no crédito entram no mês em que a fatura é paga, e a lista mostra o vencimento e a data da compra.

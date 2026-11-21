@@ -453,12 +453,12 @@ export function importarDados(_valor, input) {
 export function exportarCSV() {
     const protege = t => /^[=+\-@]/.test(String(t)) ? "'" + t : t;
     const fmt = n => (num(n) / 100).toFixed(2).replace('.', ',');
-    const linhas = [['Mês', 'Data', 'Tipo', 'Categoria', 'Pagamento', 'Descrição', 'Valor']];
+    const linhas = [['Mês', 'Data', 'Compra', 'Tipo', 'Categoria', 'Pagamento', 'Descrição', 'Valor']];
     S.estado.meses.forEach(m => {
-        m.receitas.forEach(r => linhas.push([m.nome, '', 'Receita', '', '', protege(r.descricao), fmt(r.valor)]));
+        m.receitas.forEach(r => linhas.push([m.nome, '', '', 'Receita', '', '', protege(r.descricao), fmt(r.valor)]));
         m.lancamentos.slice().sort((a, b) => a.data.localeCompare(b.data)).forEach(l => {
             const c = catDoItem(l);
-            linhas.push([m.nome, dataBR(l.data), c.tipo === 'investimento' ? 'Investimento' : 'Gasto', protege(curto(c.nome)), nomePag(l.pagamento), protege(l.descricao), fmt(l.valor)]);
+            linhas.push([m.nome, dataBR(l.data), l.compra ? dataBR(l.compra) : '', c.tipo === 'investimento' ? 'Investimento' : 'Gasto', protege(curto(c.nome)), nomePag(l.pagamento), protege(l.descricao), fmt(l.valor)]);
         });
     });
     const csv = '\ufeff' + linhas.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
@@ -503,6 +503,7 @@ export function abaDoMes(nome) {
     document.querySelectorAll('[data-tab]').forEach(b => {
         const ativo = b.dataset.tab === nome;
         b.setAttribute('aria-selected', String(ativo));
+        b.setAttribute('tabindex', ativo ? '0' : '-1');
         b.classList.toggle('btn-primario', ativo);
         b.classList.toggle('btn-secundario', !ativo);
     });

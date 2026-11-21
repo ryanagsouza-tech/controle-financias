@@ -69,7 +69,7 @@ export function boasVindas() {
                 <li>Registre os gastos conforme acontecem e use o botão Backup de vez em quando.</li>
             </ol>
             <div class="flex flex-wrap gap-2">
-                <button ${ev('click', 'trocarAba', 'config')} class="btn btn-primario">Saldo e categorias</button>
+                <button ${ev('click', 'trocarAba', 'ajustes')} class="btn btn-primario">Saldos e configurações</button>
                 ${atual ? `<button ${ev('click', 'trocarAba', atual.id)} class="btn btn-primario">Abrir ${esc(atual.nome)}</button>` : ''}
                 <button ${ev('click', 'dispensarBoasVindas')} class="btn btn-secundario">Não mostrar mais</button>
             </div>
@@ -385,7 +385,48 @@ export function blocoMetasProgresso() {
 }
 
 export function viewConfig() {
-    return viewConfigCorpo() + blocoCartao() + blocoMetas() + blocoPontos() + blocoAparencia();
+    return viewConfigCorpo();
+}
+
+// Tela de Configurações: saldos iniciais, cartão de crédito, metas, pontos de restauração e aparência
+export function viewAjustes() {
+    return `
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-900">Configurações</h2>
+            <p class="text-xs text-slate-500">Saldos iniciais, cartão de crédito, metas, pontos de restauração e aparência.</p>
+        </div>
+        ${blocoSaldos()}
+        ${blocoCartao()}
+        ${blocoMetas()}
+        ${blocoPontos()}
+        ${blocoAparencia()}`;
+}
+
+// Saldos iniciais: conta, investido e gastos de antes do app
+export function blocoSaldos() {
+    const campo = 'bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-medium';
+    return `
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div>
+                <h3 class="font-bold text-slate-900">Saldos iniciais</h3>
+                <p class="text-xs text-slate-500">Para quem já começa com dinheiro na conta, investido ou gastos de antes do app. Entram a partir do primeiro mês.</p>
+            </div>
+            <div>
+                <label for="saldoInicial" class="block text-sm font-bold text-slate-600 mb-1">Saldo na conta (R$)</label>
+                <input type="number" step="0.01" inputmode="decimal" id="saldoInicial" value="${S.estado.saldoInicial ? reais(S.estado.saldoInicial) : ''}" placeholder="0.00" ${ev('change', 'definirSaldoInicial')} class="${campo} w-48 text-right">
+                <p class="text-xs text-slate-500 mt-1">O que você tem hoje na conta.</p>
+            </div>
+            <div>
+                <label for="saldoInicialInvest" class="block text-sm font-bold text-slate-600 mb-1">Já investido (R$)</label>
+                <input type="number" step="0.01" inputmode="decimal" id="saldoInicialInvest" value="${S.estado.saldoInicialInvest ? reais(S.estado.saldoInicialInvest) : ''}" placeholder="0.00" ${ev('change', 'definirSaldoInicialInvest')} class="${campo} w-48 text-right">
+                <p class="text-xs text-slate-500 mt-1">Soma ao total investido e ao patrimônio.</p>
+            </div>
+            <div>
+                <label for="gastoInicial" class="block text-sm font-bold text-slate-600 mb-1">Gastos de antes do app (R$)</label>
+                <input type="number" step="0.01" inputmode="decimal" id="gastoInicial" value="${S.estado.gastoInicial ? reais(S.estado.gastoInicial) : ''}" placeholder="0.00" ${ev('change', 'definirGastoInicial')} class="${campo} w-48 text-right">
+                <p class="text-xs text-slate-500 mt-1">Aparece no total de gastos da Visão Geral. Não diminui o saldo da conta, que já é o valor de hoje.</p>
+            </div>
+        </div>`;
 }
 
 export function blocoPontos() {
@@ -418,29 +459,9 @@ export function viewConfigCorpo() {
     return `
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
             <h2 class="text-xl font-bold text-slate-900">Categorias e Orçamento</h2>
-            <p class="text-xs text-slate-500">Edite os nomes e cores, defina um limite mensal por categoria (0 significa sem limite) e informe o saldo que você já tinha na conta antes do primeiro mês.</p>
+            <p class="text-xs text-slate-500">Edite os nomes e cores, defina um limite mensal por categoria (0 significa sem limite).</p>
         </div>
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-            <div>
-                <h3 class="font-bold text-slate-900">Saldos iniciais</h3>
-                <p class="text-xs text-slate-500">Para quem já começa com dinheiro na conta, investido ou gastos de antes do app. Entram a partir do primeiro mês.</p>
-            </div>
-            <div>
-                <label for="saldoInicial" class="block text-sm font-bold text-slate-600 mb-1">Saldo na conta (R$)</label>
-                <input type="number" step="0.01" inputmode="decimal" id="saldoInicial" value="${S.estado.saldoInicial ? reais(S.estado.saldoInicial) : ''}" placeholder="0.00" ${ev('change', 'definirSaldoInicial')} class="${campo} w-48 text-right">
-                <p class="text-xs text-slate-500 mt-1">O que você tem hoje na conta.</p>
-            </div>
-            <div>
-                <label for="saldoInicialInvest" class="block text-sm font-bold text-slate-600 mb-1">Já investido (R$)</label>
-                <input type="number" step="0.01" inputmode="decimal" id="saldoInicialInvest" value="${S.estado.saldoInicialInvest ? reais(S.estado.saldoInicialInvest) : ''}" placeholder="0.00" ${ev('change', 'definirSaldoInicialInvest')} class="${campo} w-48 text-right">
-                <p class="text-xs text-slate-500 mt-1">Soma ao total investido e ao patrimônio.</p>
-            </div>
-            <div>
-                <label for="gastoInicial" class="block text-sm font-bold text-slate-600 mb-1">Gastos de antes do app (R$)</label>
-                <input type="number" step="0.01" inputmode="decimal" id="gastoInicial" value="${S.estado.gastoInicial ? reais(S.estado.gastoInicial) : ''}" placeholder="0.00" ${ev('change', 'definirGastoInicial')} class="${campo} w-48 text-right">
-                <p class="text-xs text-slate-500 mt-1">Aparece no total de gastos da Visão Geral. Não diminui o saldo da conta, que já é o valor de hoje.</p>
-            </div>
-        </div>
+        
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <h3 class="font-bold text-slate-900">Categorias</h3>
@@ -535,10 +556,10 @@ export function viewMes(mes) {
         </div>
 
         <div role="tablist" aria-label="Seções do mês" class="md:hidden grid grid-cols-3 gap-2">
-            ${[['resumo', 'Resumo'], ['lancamentos', 'Lançamentos'], ['receitas', 'Receitas']].map(([k, r]) => `<button role="tab" aria-selected="${S.abaMes === k}" data-tab="${k}" ${ev('click', 'abaDoMes', k)} class="btn ${S.abaMes === k ? 'btn-primario' : 'btn-secundario'}">${r}</button>`).join('')}
+            ${[['resumo', 'Resumo'], ['lancamentos', 'Lançamentos'], ['receitas', 'Receitas']].map(([k, r]) => `<button role="tab" id="tab_${k}" aria-controls="sec_${k}" aria-selected="${S.abaMes === k}" tabindex="${S.abaMes === k ? 0 : -1}" data-tab="${k}" ${ev('click', 'abaDoMes', k)} class="btn ${S.abaMes === k ? 'btn-primario' : 'btn-secundario'}">${r}</button>`).join('')}
         </div>
 
-        <div data-sec="resumo" class="${S.abaMes === 'resumo' ? '' : 'hidden'} md:block space-y-6">
+        <div data-sec="resumo" id="sec_resumo" role="tabpanel" aria-labelledby="tab_resumo" class="${S.abaMes === 'resumo' ? '' : 'hidden'} md:block space-y-6">
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
             <div>
                 <h3 class="font-bold text-slate-900">Gastos e orçamento por categoria</h3>
@@ -561,7 +582,7 @@ export function viewMes(mes) {
         ${resumoPagamento(mes)}
         </div>
 
-        <div data-sec="lancamentos" class="${S.abaMes === 'lancamentos' ? '' : 'hidden'} md:block space-y-6">
+        <div data-sec="lancamentos" id="sec_lancamentos" role="tabpanel" aria-labelledby="tab_lancamentos" class="${S.abaMes === 'lancamentos' ? '' : 'hidden'} md:block space-y-6">
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
             <h3 class="font-bold text-slate-900">Novo lançamento</h3>
             <div>
@@ -621,7 +642,7 @@ export function viewMes(mes) {
         </div>
         </div>
 
-        <div data-sec="receitas" class="${S.abaMes === 'receitas' ? '' : 'hidden'} md:block space-y-6">
+        <div data-sec="receitas" id="sec_receitas" role="tabpanel" aria-labelledby="tab_receitas" class="${S.abaMes === 'receitas' ? '' : 'hidden'} md:block space-y-6">
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
             <h3 class="font-bold text-slate-900">Receitas do mês</h3>
             ${mes.receitas.length ? mes.receitas.map(r => `

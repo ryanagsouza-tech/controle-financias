@@ -2,6 +2,8 @@
 // data-click, data-change, data-input e data-enter com o nome de uma ação, e este módulo
 // chama a ação correspondente, mas só se ela estiver na lista de ações permitidas.
 
+const NATIVOS = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'];
+
 export function executar(acoes, el, tipo, evento) {
     const nome = el.dataset[tipo];
     const fn = Object.prototype.hasOwnProperty.call(acoes, nome) ? acoes[nome] : null;
@@ -27,8 +29,29 @@ export function instalar(doc, acoes) {
     doc.addEventListener('change', e => { const el = achar(e, '[data-change]'); if (el) executar(acoes, el, 'change', e); });
     doc.addEventListener('input', e => { const el = achar(e, '[data-input]'); if (el) executar(acoes, el, 'input', e); });
     doc.addEventListener('keydown', e => {
-        if (e.key !== 'Enter') return;
-        const el = achar(e, '[data-enter]');
-        if (el && el.tagName === 'INPUT') { e.preventDefault(); executar(acoes, el, 'enter', e); }
+        // Enter dentro de um campo avança ou envia, conforme data-enter
+        if (e.key === 'Enter') {
+            const el = achar(e, '[data-enter]');
+            if (el && el.tagName === 'INPUT') { e.preventDefault(); executar(acoes, el, 'enter', e); return; }
+        }
+        // Itens com role="button" que não são botões de verdade (os meses do gráfico) respondem a Enter e Espaço
+        if (e.key === 'Enter' || e.key === ' ') {
+            const el = achar(e, '[data-click]');
+            if (el && el.getAttribute && el.getAttribute('role') === 'button' && !NATIVOS.includes(String(el.tagName).toUpperCase())) {
+                e.preventDefault(); executar(acoes, el, 'click', e); return;
+            }
+        }
+        // Abas: setas, Home e End trocam de aba
+        if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+            const aba = achar(e, '[role="tab"]');
+            if (!aba || !aba.parentElement) return;
+            const abas = [...aba.parentElement.querySelectorAll('[role="tab"]')];
+            const i = abas.indexOf(aba);
+            const destino = e.key === 'Home' ? abas[0] : e.key === 'End' ? abas[abas.length - 1]
+                : abas[(i + (e.key === 'ArrowRight' ? 1 : -1) + abas.length) % abas.length];
+            e.preventDefault();
+            executar(acoes, destino, 'click', e);
+            destino.focus();
+        }
     });
 }

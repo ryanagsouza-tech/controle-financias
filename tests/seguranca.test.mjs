@@ -29,7 +29,7 @@ function estadoHostil() {
 function todasAsTelas() {
     estadoHostil();
     return {
-        geral: views.viewGeral(), fixas: views.viewFixas(), config: views.viewConfig(),
+        geral: views.viewGeral(), fixas: views.viewFixas(), config: views.viewConfig(), ajustes: views.viewAjustes(),
         mes: views.viewMes(S.estado.meses[0]), tri: views.viewTrimestre('2026-T4')
     };
 }

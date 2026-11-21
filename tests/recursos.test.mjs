@@ -142,8 +142,8 @@ test('visão geral soma o gasto inicial ao total de gastos e avisa', () => {
     assert.match(html, /inclui R\$\u00a0300,00 de antes do app/);
 });
 
-test('tela de categorias tem os três saldos iniciais', () => {
-    const html = views.viewConfig();
+test('tela de Configurações tem os três saldos iniciais', () => {
+    const html = views.viewAjustes();
     for (const id of ['saldoInicial', 'saldoInicialInvest', 'gastoInicial']) assert.ok(html.includes(`id="${id}"`), id);
 });
 
@@ -252,10 +252,11 @@ test('Visão Geral mostra o progresso das metas com barra', () => {
     assert.match(html, /Faltam R\$\u00a050,00/);
 });
 
-test('sem metas não aparece o bloco na Visão Geral, e a tela de categorias tem o cadastro', () => {
+test('sem metas não aparece o bloco na Visão Geral, e a tela de Configurações tem o cadastro', () => {
     mesDoCalendario(A, M);
     assert.ok(!views.viewGeral().includes('Metas de economia'));
-    assert.match(views.viewConfig(), /Metas de economia/);
+    assert.match(views.viewAjustes(), /Metas de economia/);
+    assert.ok(!views.viewConfig().includes('Metas de economia'), 'Categorias não tem mais as metas');
 });
 
 test('meta com dados estranhos é normalizada', () => {
@@ -273,9 +274,9 @@ test('tela do mês tem 3 seções e só a aberta aparece no celular', () => {
     const html = views.viewMes(mes);
     assert.match(html, /role="tablist"/);
     for (const s of ['resumo', 'lancamentos', 'receitas']) assert.match(html, new RegExp(`data-sec="${s}"`));
-    assert.match(html, /data-sec="resumo" class=" md:block/);
-    assert.match(html, /data-sec="lancamentos" class="hidden md:block/);
-    assert.match(html, /data-sec="receitas" class="hidden md:block/);
+    assert.match(html, /data-sec="resumo"[^>]* class=" md:block/);
+    assert.match(html, /data-sec="lancamentos"[^>]* class="hidden md:block/);
+    assert.match(html, /data-sec="receitas"[^>]* class="hidden md:block/);
 });
 
 test('trocar de aba só alterna as seções, sem redesenhar a tela', () => {

@@ -5,7 +5,7 @@ import { S } from './estado.js';
 import { ehAbaTri, mesesCronologicos, rotuloTri, triDe } from './calculos.js';
 import { lerSnapshots } from './armazenamento.js';
 import { aplicarEstilos } from './ui.js';
-import { avisoBackup, viewConfig, viewFixas, viewGeral, viewMes, viewTrimestre } from './views.js';
+import { avisoBackup, viewAjustes, viewConfig, viewFixas, viewGeral, viewMes, viewTrimestre } from './views.js';
 
 export function renderizar() {
     try {
@@ -24,7 +24,7 @@ export function renderizar() {
 }
 
 export function validarAba() {
-    if (S.abaAtiva === 'resumo_geral' || S.abaAtiva === 'config' || S.abaAtiva === 'fixas') return;
+    if (['resumo_geral', 'config', 'fixas', 'ajustes'].includes(S.abaAtiva)) return;
     if (ehAbaTri(S.abaAtiva)) {
         if (!S.estado.meses.some(m => triDe(m) === S.abaAtiva)) S.abaAtiva = 'resumo_geral';
     } else if (!S.estado.meses.some(m => m.id === S.abaAtiva)) {
@@ -40,7 +40,7 @@ export function renderizarNav() {
             ${icone}<span>${texto}</span>
         </button>`;
     };
-    document.getElementById('navPrincipal').innerHTML = item('resumo_geral', ICONES.inicio, 'Visão Geral') + item('fixas', ICONES.fixas, 'Contas Fixas') + item('config', ICONES.config, 'Categorias');
+    document.getElementById('navPrincipal').innerHTML = item('resumo_geral', ICONES.inicio, 'Visão Geral') + item('fixas', ICONES.fixas, 'Contas Fixas') + item('config', ICONES.categorias, 'Categorias') + item('ajustes', ICONES.config, 'Configurações');
 
     // O ano do que está aberto fica sempre expandido
     const ativo = S.estado.meses.find(m => m.id === S.abaAtiva);
@@ -82,7 +82,7 @@ export function renderizarBarra() {
     el.innerHTML = item(aba === 'resumo_geral', 'trocarAba', ['resumo_geral'], ICONES.inicio, 'Início')
         + item(ehMes, 'irParaMes', [], ICONES.mes, 'Mês')
         + item(aba === 'fixas', 'trocarAba', ['fixas'], ICONES.fixas, 'Fixas')
-        + item(aba === 'config' || ehAbaTri(aba), 'toggleMobileSidebar', [], ICONES.mais, 'Mais');
+        + item(aba === 'config' || aba === 'ajustes' || ehAbaTri(aba), 'toggleMobileSidebar', [], ICONES.mais, 'Mais');
 }
 
 // Abre o último mês visto (ou o mês atual, ou o primeiro)
@@ -113,7 +113,8 @@ export function renderizarConteudo() {
     const c = document.getElementById('conteudoPrincipal');
     if (S.abaAtiva === 'resumo_geral') c.innerHTML = viewGeral();
     else if (S.abaAtiva === 'fixas') c.innerHTML = viewFixas();
-    else if (S.abaAtiva === 'config') { c.innerHTML = viewConfig(); atualizarPontos(); }
+    else if (S.abaAtiva === 'config') c.innerHTML = viewConfig();
+    else if (S.abaAtiva === 'ajustes') { c.innerHTML = viewAjustes(); atualizarPontos(); }
     else if (ehAbaTri(S.abaAtiva)) c.innerHTML = viewTrimestre(S.abaAtiva);
     else c.innerHTML = viewMes(S.estado.meses.find(m => m.id === S.abaAtiva));
 }
